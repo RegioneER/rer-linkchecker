@@ -37,11 +37,6 @@ An addon that check all links in site contents and generate a report with broken
 
 ### Fire Up the Servers 🔥
 
-1.  Create a new Plone site on your first run.
-
-    ```shell
-    make backend-create-site
-    ```
 
 2.  Start the backend at http://localhost:8080/.
 
@@ -68,7 +63,6 @@ Deploy a local Docker Compose environment that includes the following.
 Run the following commands in a shell session.
 
 ```shell
-make stack-create-site
 make stack-start
 ```
 
@@ -78,17 +72,10 @@ And... you're all set! Your Plone site is up and running locally! 🚀
 
 This monorepo consists of the following distinct sections:
 
-- **backend**: Houses the API and Plone installation, utilizing pip instead of buildout, and includes a policy package named rer.linkchecker.
-- **frontend**: Contains the React (Volto) package.
-- **devops**: Encompasses Docker stack, Ansible playbooks, and cache settings.
+- **backend**: the Plone add-on `rer.linkchecker` (API + Plone installation via `uv`, not buildout). See [backend/README.md](backend/README.md) for the tool's features, its API, and the `check_broken_links` console script.
+- **frontend**: the Volto add-on `volto-rer-linkchecker`. See [frontend/README.md](frontend/README.md).
+- **devops**: Docker stack, Ansible playbooks, and cache settings.
 - **docs**: Scaffold for writing documentation for your project.
-
-### Why this structure? 🤔
-
-- All necessary codebases to run the site are contained within the repository (excluding existing add-ons for Plone and React).
-- Specific GitHub Workflows are triggered based on changes in each codebase (refer to .github/workflows).
-- Simplifies the creation of Docker images for each codebase.
-- Demonstrates Plone installation/setup without buildout.
 
 ## Code quality assurance 🧐
 
@@ -145,4 +132,8 @@ make i18n
 
 ## Credits and acknowledgements 🙏
 
-Generated using [Cookieplone (1.0.0)](https://github.com/plone/cookieplone) and [cookieplone-templates (354a0d2)](https://github.com/plone/cookieplone-templates/commit/354a0d2ca54c3813b14c6f1018ef62b97fa0417c) on 2026-07-24 15:48:05.906824. A special thanks to all contributors and supporters!
+Developed with the support of [Regione Emilia Romagna](http://www.regione.emilia-romagna.it/), which supports the [PloneGov initiative](http://www.plonegov.it/).
+
+This product was developed by the **RedTurtle Technology** team.
+
+Scaffolded with [Cookieplone](https://github.com/plone/cookieplone) and [cookieplone-templates](https://github.com/plone/cookieplone-templates).

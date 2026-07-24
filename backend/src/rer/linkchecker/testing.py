@@ -17,11 +17,17 @@ class Layer(PloneSandboxLayer):
         # The z3c.autoinclude feature is disabled in the Plone fixture base
         # layer.
         import plone.restapi
+        import plone.volto
 
         self.loadZCML(package=plone.restapi)
+        self.loadZCML(package=plone.volto)
         self.loadZCML(package=rer.linkchecker)
 
     def setUpPloneSite(self, portal):
+        # assigns the "blocks"/"blocks_layout" fields to Document, Event, ...
+        # so the linkchecker can find urls inside blocks content, like on a
+        # real Volto site.
+        applyProfile(portal, "plone.volto:default")
         applyProfile(portal, "rer.linkchecker:default")
 
 

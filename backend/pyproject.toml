@@ -3,7 +3,7 @@ name = "rer.linkchecker"
 dynamic = ["version"]
 description = "An addon that check all links in site contents and generate a report with broken ones"
 readme = "README.md"
-license = "GPL-2.0-only"
+license = { text = "GPL-2.0-only" }
 requires-python = ">=3.11"
 authors = [
     { name = "RedTurtle Technology", email = "sviluppo@redturtle.it" },
@@ -31,6 +31,7 @@ dependencies = [
     "plone.api",
     "plone.restapi",
     "plone.volto",
+    "requests",
 ]
 
 [project.optional-dependencies]
@@ -53,6 +54,9 @@ Tracker = "https://github.com/RegioneEr/rer-linkchecker/issues"
 [project.entry-points."plone.autoinclude.plugin"]
 target = "plone"
 
+[project.scripts]
+check_broken_links = "rer.linkchecker.scripts.check_broken_links:run"
+
 [tool.uv]
 managed = false
 
@@ -62,6 +66,12 @@ path = "src/rer/linkchecker/__init__.py"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = {attr = "rer.linkchecker.__version__"}
 
 [tool.hatch.build]
 strict-naming = true
