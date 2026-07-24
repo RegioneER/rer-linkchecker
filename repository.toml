@@ -1,0 +1,32 @@
+[repository]
+name = "rer-linkchecker"
+changelog = "CHANGELOG.md"
+version = "version.txt"
+version_format = "semver"
+container_images_prefix = "ghcr.io/RegioneEr/rer-linkchecker"
+compose = ["docker-compose.yml"]
+
+[repository.towncrier]
+section = "Project"
+settings = "towncrier.toml"
+
+[backend.package]
+name = "rer.linkchecker"
+path = "backend"
+changelog = "backend/CHANGELOG.md"
+towncrier_settings = "backend/pyproject.toml"
+base_package = "Products.CMFPlone"
+publish = true
+
+[frontend.package]
+name = "volto-rer-linkchecker"
+path = "frontend/packages/volto-rer-linkchecker"
+changelog = "frontend/packages/volto-rer-linkchecker/CHANGELOG.md"
+towncrier_settings = "frontend/packages/volto-rer-linkchecker/towncrier.toml"
+base_package = "@plone/volto"
+publish = true
+
+[cookieplone]
+template = "monorepo_addon"
+template_version = "354a0d2ca54c3813b14c6f1018ef62b97fa0417c"
+generated_date = "2026-07-24 13:49:24"
