@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <tool-setup>
-  <required remove="True"
-            tool_id="portal_linkchecker"
-  />
+  <forbidden tool_id="portal_linkchecker" />
 </tool-setup>
