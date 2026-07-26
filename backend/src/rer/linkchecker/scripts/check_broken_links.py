@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Run the portal_linkchecker over a Plone site and dump a csv report of
 the broken links. Same logic as the @@find-broken-links view, but runnable
 from the command line / cron. This module backs the ``check_broken_links``

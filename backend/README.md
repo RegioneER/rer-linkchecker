@@ -37,6 +37,7 @@ for uid, broken_links in tool.get_page_with_broken_links():
     ...  # [(link, status), ...] per content UID
 
 import csv
+
 with open("broken_links.csv", "w", newline="") as fh:
     writer = csv.writer(fh, quoting=csv.QUOTE_ALL)
     for row in tool.get_rows(broken=True):
