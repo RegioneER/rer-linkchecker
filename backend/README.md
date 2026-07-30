@@ -8,6 +8,8 @@ A Plone addon that checks every internal and external link found in site content
 - Checks internal links by resolving them against the catalog, and external links concurrently over HTTP (configurable timeout, thread pool size, and per-host throttling).
 - Caches external link statuses for a configurable TTL, so repeated runs only re-check links that are due.
 - Distinguishes real broken links from bot-protection responses (`403`, `429`, LinkedIn's `999`) and from `http://` links that only work over `https://` (reported so they can be fixed in place, not counted as broken).
+- Reports the conditions that are not a plain http status with their own negative status, so they can be told apart in the CSV: `-1` timeout, `-2` works only over `https` (update the link), `-3` connection error.
+- Does not verify TLS certificates: only reachability matters here, and many otherwise working servers omit their intermediate certificate (browsers fetch it themselves, `requests` does not), which would be reported as a broken link.
 - Exposes the results as a CSV report (`PAGE, LINK, TYPE, STATUS, DESCRIPTION`) via `tool.get_rows()`.
 - Ships a `check_broken_links` console script to run a check from the command line or from cron, without going through the web.
 

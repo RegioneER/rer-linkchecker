@@ -12,6 +12,7 @@ from plone.restapi.serializer.utils import RESOLVEUID_RE
 from Products.CMFCore.utils import UniqueObject
 from requests.adapters import HTTPAdapter
 from urllib.parse import urlparse
+from urllib3.exceptions import InsecureRequestWarning
 from zExceptions import NotFound
 from zope.interface import implementer
 from zope.interface import Interface
@@ -23,8 +24,14 @@ import re
 import requests
 import threading
 import transaction
+import urllib3
+
 
 logger = logging.getLogger(__name__)
+
+# _fetch_status never verifies certificates (see its docstring): silence the
+# warning urllib3 would otherwise emit for every single link it checks
+urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class ILinkCheckerTool(Interface):
@@ -479,6 +486,10 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         A broken http:// link that works over https is reported as
         STATUS_HTTPS_ONLY: browsers silently upgrade to https, so the link
         appears to work but should be updated in the content.
+        Certificates are never verified (verify=False): we only care whether
+        the resource is reachable, and plenty of otherwise working servers omit
+        their intermediate certificate, which browsers fetch themselves but
+        requests/certifi does not, so verifying would report them as broken.
         Called from worker threads: must not touch the ZODB.
         """
         if session is None:
@@ -487,12 +498,20 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         def fetch(url):
             try:
                 res = session.head(
-                    url, headers=headers, timeout=timeout, allow_redirects=True
+                    url,
+                    headers=headers,
+                    timeout=timeout,
+                    allow_redirects=True,
+                    verify=False,
                 )
                 status = res.status_code
                 if status >= 400:
                     res = session.get(
-                        url, headers=headers, timeout=timeout, stream=True
+                        url,
+                        headers=headers,
+                        timeout=timeout,
+                        stream=True,
+                        verify=False,
                     )
                     status = res.status_code
                     res.close()

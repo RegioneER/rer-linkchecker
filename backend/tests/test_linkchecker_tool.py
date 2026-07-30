@@ -1,9 +1,11 @@
 from datetime import datetime
 from plone import api
+from rer.linkchecker.linkchecker import STATUS_CONNECTION_ERROR
 from rer.linkchecker.linkchecker import STATUS_HTTPS_ONLY
 from uuid import uuid4
 
 import pytest
+import requests
 
 
 class FakeResponse:
@@ -15,12 +17,33 @@ class FakeResponse:
         pass
 
 
+class BadChain:
+    """A server whose certificate cannot be verified, e.g. because it omits
+    its intermediate certificate: raises an SSLError on a verified request,
+    answers normally on an unverified one."""
+
+    def __init__(self, status):
+        self.status = status
+
+
 class FakeSession:
+    """``statuses`` maps a url to the status to answer, to a BadChain, or to
+    an exception instance to raise."""
+
     def __init__(self, statuses):
         self.statuses = statuses
 
-    def head(self, url, **kwargs):
-        return FakeResponse(self.statuses[url])
+    def head(self, url, verify=True, **kwargs):
+        value = self.statuses[url]
+        if isinstance(value, BadChain):
+            if verify:
+                raise requests.exceptions.SSLError(
+                    "unable to get local issuer certificate"
+                )
+            return FakeResponse(value.status)
+        if isinstance(value, Exception):
+            raise value
+        return FakeResponse(value)
 
     get = head
 
@@ -179,4 +202,43 @@ class TestLinkCheckerTool:
                 "http://foo.com/bar", timeout=1, headers={}, session=session
             )
             == 400
+        )
+
+    def test_certificates_are_not_verified(self, linkchecker_content):
+        """The real-world case of www.sviluppoeconomico.gov.it: http answers
+        404 and https works, but the server omits its intermediate certificate.
+        BadChain answers only unverified requests, so these pass only as long
+        as the checker keeps sending verify=False."""
+        tool = linkchecker_content["tool"]
+
+        # http broken, https reachable but with an unverifiable chain
+        session = FakeSession({
+            "http://foo.com/bar": 404,
+            "https://foo.com/bar": BadChain(200),
+        })
+        assert (
+            tool._fetch_status(
+                "http://foo.com/bar", timeout=1, headers={}, session=session
+            )
+            == STATUS_HTTPS_ONLY
+        )
+
+        # a bad chain alone is no reason to report a link as broken
+        session = FakeSession({"https://foo.com/bar": BadChain(200)})
+        assert (
+            tool._fetch_status(
+                "https://foo.com/bar", timeout=1, headers={}, session=session
+            )
+            == 200
+        )
+
+        # a real tls failure is still a connection error
+        session = FakeSession({
+            "https://foo.com/bar": requests.exceptions.SSLError("handshake failed")
+        })
+        assert (
+            tool._fetch_status(
+                "https://foo.com/bar", timeout=1, headers={}, session=session
+            )
+            == STATUS_CONNECTION_ERROR
         )
