@@ -105,6 +105,23 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
 
     @property
+    def request_headers(self):
+        """Headers sent when checking an external link.
+
+        Accept is here because requests defaults it to ``*/*``, and some servers
+        negotiate on it and answer 404 to a request that does not declare it
+        accepts html, which would show up as a broken link. It keeps the
+        ``*/*;q=0.8`` fallback a browser sends, so links to pdf or images are
+        not rejected either.
+        """
+        return {
+            "User-Agent": self.user_agent,
+            "Accept": (
+                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            ),
+        }
+
+    @property
     def portal_url(self):
         url = getattr(self, "_v_portal_url", None)
         if url is None:
@@ -408,7 +425,7 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         session.mount("http://", adapter)
         session.mount("https://", adapter)
         # workers only do HTTP: no ZODB access from threads
-        headers = {"User-Agent": self.user_agent}
+        headers = self.request_headers
         # one semaphore per host, built upfront to avoid races between threads
         semaphores = {
             host: threading.Semaphore(max_per_host)
@@ -469,7 +486,7 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
             last_update, status = cached
             if (datetime.now() - last_update).total_seconds() < ttl:
                 return status
-        headers = {"User-Agent": self.user_agent}
+        headers = self.request_headers
         status = self._fetch_status(link, timeout=timeout, headers=headers)
         self._external_links_status[link] = (datetime.now(), status)
         return status

@@ -159,9 +159,7 @@ def check_single_url(tool, args, url):
         status = tool._check_internal_link(url)
     else:
         link_type = "EXTERNAL"
-        status = tool._fetch_status(
-            url, timeout=timeout, headers={"User-Agent": tool.user_agent}
-        )
+        status = tool._fetch_status(url, timeout=timeout, headers=tool.request_headers)
     logger.info(
         "%s  %s  %s  %s",
         url,
@@ -182,7 +180,7 @@ def check_single_content(tool, args, obj):
         else:
             link_type = "EXTERNAL"
             status = tool._fetch_status(
-                link, timeout=timeout, headers={"User-Agent": tool.user_agent}
+                link, timeout=timeout, headers=tool.request_headers
             )
         logger.info(
             "  %s  %s  %s  %s",
