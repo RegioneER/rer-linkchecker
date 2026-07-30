@@ -113,12 +113,17 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         accepts html, which would show up as a broken link. It keeps the
         ``*/*;q=0.8`` fallback a browser sends, so links to pdf or images are
         not rejected either.
+        Sec-Fetch-Mode is here because claiming to be a browser through the user
+        agent without the metadata a real navigation carries is enough for some
+        servers to reject the request: facebook.com answers 400 to it, while it
+        serves both a full browser and an honestly non-browser client.
         """
         return {
             "User-Agent": self.user_agent,
             "Accept": (
                 "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
             ),
+            "Sec-Fetch-Mode": "navigate",
         }
 
     @property

@@ -204,13 +204,16 @@ class TestLinkCheckerTool:
             == 400
         )
 
-    def test_request_headers_declare_html_is_accepted(self, linkchecker_content):
-        """www.edvance.it answers 404 to a request whose Accept is not html,
-        which is what requests sends by default."""
+    def test_request_headers_look_like_a_browser_navigation(self, linkchecker_content):
+        """Two real-world false positives: www.edvance.it answers 404 to a
+        request whose Accept is not html (what requests sends by default), and
+        facebook.com answers 400 to one that claims to be a browser without the
+        Sec-Fetch metadata of a real navigation."""
         headers = linkchecker_content["tool"].request_headers
         assert headers["Accept"].startswith("text/html")
         # but anything is still accepted, or pdf and image links would break
         assert "*/*" in headers["Accept"]
+        assert headers["Sec-Fetch-Mode"] == "navigate"
 
     def test_certificates_are_not_verified(self, linkchecker_content):
         """The real-world case of www.sviluppoeconomico.gov.it: http answers
