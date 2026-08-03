@@ -149,6 +149,17 @@ i18n:  ## Update locales
 test:  backend-test frontend-test ## Test codebase
 
 ###########################################
+# Release
+###########################################
+.PHONY: release
+release:  ## Rilascia il backend su PyPI e crea il tag (il frontend lo pubblica la CI)
+	@bash ./scripts/release.sh
+
+.PHONY: bootstrap-npm
+bootstrap-npm:  ## Una tantum: login, prima publish su npm, trusted publisher per la CI, logout
+	@bash ./scripts/bootstrap-npm.sh
+
+###########################################
 # Container images
 ###########################################
 .PHONY: build-images

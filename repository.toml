@@ -24,7 +24,8 @@ path = "frontend/packages/volto-rer-linkchecker"
 changelog = "frontend/packages/volto-rer-linkchecker/CHANGELOG.md"
 towncrier_settings = "frontend/packages/volto-rer-linkchecker/towncrier.toml"
 base_package = "@plone/volto"
-publish = true
+# lo pubblichiamo via github actions (npm.yml)
+publish = false
 
 [cookieplone]
 template = "monorepo_addon"

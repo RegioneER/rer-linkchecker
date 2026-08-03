@@ -1,0 +1,66 @@
+name: Release latest version on npm
+
+on:
+  push:
+    tags:
+      - "*"
+  # Permette di ripubblicare un tag senza rifare la release: il backend viene
+  # gia' pubblicato da scripts/release.sh, quindi se la publish npm fallisce
+  # non si puo' semplicemente rilanciare `make release`.
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Tag da pubblicare"
+        required: true
+
+jobs:
+  release_to_npm:
+    name: Release to npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Disable Corepack's packageManager pin
+        run: corepack disable
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Determine npm dist-tag from version
+        id: npm-tag
+        working-directory: frontend/packages/volto-rer-linkchecker
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" =~ -([a-zA-Z]+) ]]; then
+            TAG="${BASH_REMATCH[1]}"
+          else
+            TAG="latest"
+          fi
+          echo "Version $VERSION -> dist-tag $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Release to npm
+        working-directory: frontend/packages/volto-rer-linkchecker
+        run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.npm-tag.outputs.tag }}"
+
+      - name: Dump npm debug log on failure
+        if: failure()
+        run: cat /home/runner/.npm/_logs/*.log
