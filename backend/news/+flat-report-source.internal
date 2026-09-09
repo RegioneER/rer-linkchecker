@@ -1,0 +1,1 @@
+Add `LinkCheckerTool.get_broken_links()`, the flat one-dict-per-link view of the report, plus `filter_links()` to narrow it by status and type. `get_rows()` now renders that single source as csv instead of walking the results itself, which drops the duplicated page lookup and status description logic. Its unused `broken` argument is gone: the report only ever shows broken links.

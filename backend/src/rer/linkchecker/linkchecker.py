@@ -298,8 +298,67 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
             if broken_links:
                 yield (uid, broken_links)
 
-    def get_rows(self, broken=True):
+    def get_broken_links(self):
+        """Iterate the stored report, one dict per broken link.
+
+        This is the flat view of the results and the single source every report
+        is built from. Unlike get_page_with_broken_links, bot-protected links
+        are included: they carry their own description, so a reader can tell
+        "could not be verified" apart from "broken" and filter on it.
+        Contents deleted since the last check are skipped.
+
+        Deliberately unfiltered: walking the results costs one catalog lookup
+        per content, so a caller that needs both the whole set (to count) and a
+        subset (to display) walks once and filters with filter_links.
+
+        The page an item belongs to is described with the plone.restapi field
+        names (@id, @type, title, UID), so a client can treat it as any other
+        content reference. The link's own fields are named apart from those:
+        link_type, not type, and status_description, not description.
         """
+        for uid, (last_update, links) in self._outgoing_links.items():
+            broken = [item for item in links if not self._is_ok(item[1])]
+            if not broken:
+                continue
+            brains = api.content.find(UID=uid, unrestricted=True)
+            if not brains:
+                # content deleted after the last check
+                continue
+            brain = brains[0]
+            for link, status in broken:
+                yield {
+                    "@id": brain.getURL(),
+                    "@type": brain.portal_type,
+                    "title": brain.Title,
+                    "UID": uid,
+                    "link": link,
+                    "link_type": (
+                        "INTERNAL" if self._is_internal(link) else "EXTERNAL"
+                    ),
+                    "status": status,
+                    "status_description": self._status_description(status),
+                    "last_update": last_update,
+                }
+
+    @staticmethod
+    def filter_links(items, status=None, link_type=None):
+        """Filter get_broken_links items, the one place filtering happens.
+
+        :param items: iterable of get_broken_links dicts
+        :param status: keep only these statuses (iterable of int)
+        :param link_type: keep only "INTERNAL" or "EXTERNAL"
+        """
+        wanted = set(status) if status else None
+        for item in items:
+            if wanted is not None and item["status"] not in wanted:
+                continue
+            if link_type is not None and item["link_type"] != link_type:
+                continue
+            yield item
+
+    def get_rows(self, status=None, link_type=None):
+        """The report as csv rows, header included.
+
         example usage:
 
             tool = api.portal.get_tool("portal_linkchecker")
@@ -308,23 +367,17 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
                 writer.writerow(row)
         """
         yield ["PAGE", "LINK", "TYPE", "STATUS", "DESCRIPTION"]
-        for uid, (_, links) in self._outgoing_links.items():
-            brains = api.content.find(UID=uid, unrestricted=True)
-            if not brains:
-                # content deleted after the last check
-                continue
-            page = brains[0].getURL()
-            for link, status in links:
-                if broken and self._is_ok(status):
-                    continue
-                link_type = "INTERNAL" if self._is_internal(link) else "EXTERNAL"
-                yield [
-                    page,
-                    link,
-                    link_type,
-                    status,
-                    self._status_description(status),
-                ]
+        items = self.filter_links(
+            self.get_broken_links(), status=status, link_type=link_type
+        )
+        for item in items:
+            yield [
+                item["@id"],
+                item["link"],
+                item["link_type"],
+                item["status"],
+                item["status_description"],
+            ]
 
     def _find_links(self, item):
         """Find links in the content

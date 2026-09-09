@@ -1,139 +1,132 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Plone\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-05-09 11:45-0400\n"
-"PO-Revision-Date: 2023-05-10 11:34-0400\n"
-"Last-Translator: Leonardo J. Caballero G. <leonardocaballero@gmail.com>\n"
-"Language: es\n"
-"Language-Team: ES <LL@li.org>\n"
-"Content-Type: text/plain; charset=utf-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"Preferred-Encodings: utf-8\n"
-"MIME-Version: 1.0\n"
-"Language-Code: es\n"
-"Language-Name: Español\n"
-"Domain: volto\n"
-"X-Is-Fallback-For: es-ar es-bo es-cl es-co es-cr es-do es-ec es-es es-sv es-gt es-hn es-mx es-ni es-pa es-py es-pe es-pr es-us es-uy es-ve\n"
-"X-Generator: Poedit 2.2.1\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language: it\n"
+"Language-Team: \n"
+"Content-Type: \n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
 
 #. Default: "All"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "All"
-msgstr ""
+msgstr "Tutti"
 
 #. Default: "Back to Control Panel"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Back to Control Panel"
-msgstr ""
+msgstr "Torna al pannello di controllo"
 
 #. Default: "Broken links"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Broken links"
-msgstr ""
+msgstr "Link non raggiungibili"
 
 #. Default: "Description"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Description"
-msgstr ""
+msgstr "Descrizione"
 
 #. Default: "Download CSV"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Download CSV"
-msgstr ""
+msgstr "Scarica CSV"
 
 #. Default: "External"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "External"
-msgstr ""
+msgstr "Esterno"
 
 #. Default: "Internal"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Internal"
-msgstr ""
+msgstr "Interno"
 
 #. Default: "Link"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Link"
-msgstr ""
+msgstr "Link"
 
 #. Default: "Link type"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Link type"
-msgstr ""
+msgstr "Tipo di link"
 
 #. Default: "Loading..."
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Loading"
-msgstr ""
+msgstr "Caricamento"
 
 #. Default: "No broken links match the current filters"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "No broken links match the current filters"
-msgstr ""
+msgstr "Nessun link non raggiungibile corrisponde ai filtri impostati"
 
 #. Default: "No broken links were found"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "No broken links were found"
-msgstr ""
+msgstr "Non è stato trovato nessun link non raggiungibile"
 
 #. Default: "No check has run yet"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "No check has run yet"
-msgstr ""
+msgstr "Nessun controllo è stato ancora eseguito"
 
 #. Default: "Page"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Page"
-msgstr ""
+msgstr "Pagina"
 
 #. Default: "Results"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Results"
-msgstr ""
+msgstr "Risultati"
 
 #. Default: "Status"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Status"
-msgstr ""
+msgstr "Status"
 
 #. Default: "Status code"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Status code"
-msgstr ""
+msgstr "Codice di stato"
 
 #. Default: "The check runs periodically: to have the list updated, ask the site managers"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "The check runs periodically: to have the list updated, ask the site managers"
-msgstr ""
+msgstr "Il controllo viene eseguito periodicamente: per aggiornare l'elenco, rivolgiti ai gestori del sito"
 
 #. Default: "The download failed. Try again"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "The download failed. Try again"
-msgstr ""
+msgstr "Lo scaricamento non è andato a buon fine. Riprova"
 
 #. Default: "The links found in site contents that could not be reached"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "The links found in site contents that could not be reached"
-msgstr ""
+msgstr "I link presenti nei contenuti del sito che non è stato possibile raggiungere"
 
 #. Default: "There is no report to show. Ask the site managers to run the link check"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "There is no report to show. Ask the site managers to run the link check"
-msgstr ""
+msgstr "Non c'è nessun report da mostrare. Chiedi ai gestori del sito di eseguire il controllo dei link"
 
 #. Default: "This list was generated on {date}"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "This list was generated on {date}"
-msgstr ""
+msgstr "Questo elenco è stato generato il {date}"
 
 #. Default: "This list was generated on {date} and took {duration} seconds"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "This list was generated on {date} and took {duration} seconds"
-msgstr ""
+msgstr "Questo elenco è stato generato il {date} e il controllo è durato {duration} secondi"
 
 #. Default: "Type"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Type"
-msgstr ""
+msgstr "Tipo"

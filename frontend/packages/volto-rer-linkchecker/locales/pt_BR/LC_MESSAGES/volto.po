@@ -15,3 +15,123 @@ msgstr ""
 "Language-Name: Português do Brasil\n"
 "Preferred-Encodings: utf-8\n"
 "Domain: volto\n"
+
+#. Default: "All"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "All"
+msgstr ""
+
+#. Default: "Back to Control Panel"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Back to Control Panel"
+msgstr ""
+
+#. Default: "Broken links"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Broken links"
+msgstr ""
+
+#. Default: "Description"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Description"
+msgstr ""
+
+#. Default: "Download CSV"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Download CSV"
+msgstr ""
+
+#. Default: "External"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "External"
+msgstr ""
+
+#. Default: "Internal"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Internal"
+msgstr ""
+
+#. Default: "Link"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Link"
+msgstr ""
+
+#. Default: "Link type"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Link type"
+msgstr ""
+
+#. Default: "Loading..."
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Loading"
+msgstr ""
+
+#. Default: "No broken links match the current filters"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "No broken links match the current filters"
+msgstr ""
+
+#. Default: "No broken links were found"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "No broken links were found"
+msgstr ""
+
+#. Default: "No check has run yet"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "No check has run yet"
+msgstr ""
+
+#. Default: "Page"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Page"
+msgstr ""
+
+#. Default: "Results"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Results"
+msgstr ""
+
+#. Default: "Status"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Status"
+msgstr ""
+
+#. Default: "Status code"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Status code"
+msgstr ""
+
+#. Default: "The check runs periodically: to have the list updated, ask the site managers"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "The check runs periodically: to have the list updated, ask the site managers"
+msgstr ""
+
+#. Default: "The download failed. Try again"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "The download failed. Try again"
+msgstr ""
+
+#. Default: "The links found in site contents that could not be reached"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "The links found in site contents that could not be reached"
+msgstr ""
+
+#. Default: "There is no report to show. Ask the site managers to run the link check"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "There is no report to show. Ask the site managers to run the link check"
+msgstr ""
+
+#. Default: "This list was generated on {date}"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "This list was generated on {date}"
+msgstr ""
+
+#. Default: "This list was generated on {date} and took {duration} seconds"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "This list was generated on {date} and took {duration} seconds"
+msgstr ""
+
+#. Default: "Type"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Type"
+msgstr ""

@@ -38,13 +38,21 @@ tool.check_site()  # crawl the whole site and check every link
 for uid, broken_links in tool.get_page_with_broken_links():
     ...  # [(link, status), ...] per content UID
 
+for item in tool.get_broken_links():
+    ...  # flat view: one dict per broken link, with the page it sits on
+
 import csv
 
 with open("broken_links.csv", "w", newline="") as fh:
     writer = csv.writer(fh, quoting=csv.QUOTE_ALL)
-    for row in tool.get_rows(broken=True):
+    for row in tool.get_rows():
         writer.writerow(row)
 ```
+
+`get_broken_links()` is the flat source every report is built from, and `get_rows()` is its csv
+rendering. Both include the bot-protected links (each with its own description), while
+`get_page_with_broken_links()` leaves them out: it answers "how many real problems are there".
+Filter either with `tool.filter_links(items, status=[404], link_type="EXTERNAL")`.
 
 `check_site(ttl=3600 * 6, timeout=15, max_workers=10)` accepts:
 
@@ -73,6 +81,60 @@ Options:
 - `--content <path-or-UID>`: verify a single content's links and log them, without touching the site.
 
 The csv is written to `<output-dir>/<siteid>_broken_links_<YYYYMMDD-HHMMSS>.csv`.
+
+### The REST API endpoints
+
+Two read-only endpoints on the site root expose the stored report, both guarded by the
+`rer.linkchecker.ViewReport` permission (granted to `Manager`, `Site Administrator` and
+`Editor`).
+
+They **never run a check**: a full check takes minutes on a medium site and would time the
+request out, so they only serve what the last run stored. Refresh the data out of band, with
+the `check_broken_links` script from cron. Because the data is therefore asynchronous, both
+responses carry the timestamp it dates from.
+
+```shell
+# the report as json, batched (plone.restapi conventions: b_start, b_size)
+curl -u user:pass "$SITE/++api++/@linkchecker" -H 'Accept: application/json'
+
+# the same report as a csv download
+curl -u user:pass -OJ "$SITE/++api++/@linkchecker-csv"
+```
+
+Both accept the same filters:
+
+- `status`: repeatable, e.g. `?status=404&status=-2` (negative values are the `STATUS_*`
+  constants: `-1` timeout, `-2` https-only, `-3` connection error).
+- `type`: `INTERNAL` or `EXTERNAL`.
+
+An invalid filter value answers `400` rather than silently returning an empty report.
+
+`@linkchecker` returns `last_update` and `duration` for the whole run, `items_total`, the
+batched `items`, and a `summary` listing `{status, status_description, count}` sorted by count.
+The summary is computed over the **unfiltered** report on purpose, so the counts a UI shows in
+its filter chips do not move as filters are applied. When no check has ever run, `last_update`
+is `null` and `items`/`summary` are empty, which a UI can tell apart from "nothing is broken".
+
+Each item describes the page it sits on with the usual plone.restapi field names, so a client
+can treat it as any other content reference, and names the link's own fields apart from those:
+
+```json
+{
+  "@id": "http://site/bandi-e-avvisi",
+  "@type": "Document",
+  "title": "Bandi e avvisi",
+  "UID": "1a568f09734340dfba2c1a53730b9cf6",
+  "link": "https://unimc.it/careerday",
+  "link_type": "EXTERNAL",
+  "status": 404,
+  "status_description": "Not Found",
+  "last_update": "2026-07-30T03:00:12"
+}
+```
+
+`@linkchecker-csv` returns the exact same csv the console script writes (same columns, same
+quoting), names the file after the date of the *data* rather than of the download, and repeats
+that date in the `X-Linkchecker-Last-Update` response header.
 
 ## Development
 

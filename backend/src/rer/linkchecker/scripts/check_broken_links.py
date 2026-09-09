@@ -41,6 +41,7 @@ import os
 import sys
 import Zope2
 
+
 logger = logging.getLogger("check_broken_links")
 
 
@@ -138,7 +139,7 @@ def check_site_report(site, args):
         rows = 0
         with open(output, "w", newline="") as fh:
             writer = csv.writer(fh, quoting=csv.QUOTE_ALL)
-            for row in tool.get_rows(broken=True):
+            for row in tool.get_rows():
                 writer.writerow(row)
                 rows += 1
         # rows includes the header line

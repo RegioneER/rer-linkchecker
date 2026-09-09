@@ -1,5 +1,12 @@
 <configure xmlns="http://namespaces.zope.org/zope">
 
+  <!-- Guards the report endpoints: the broken links report is for editors and
+       site managers, not for anonymous visitors. -->
+  <permission
+      id="rer.linkchecker.ViewReport"
+      title="rer.linkchecker: View report"
+      />
+
   <!-- -*- extra stuff goes here -*- -->
 
 </configure>

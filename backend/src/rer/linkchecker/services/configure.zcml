@@ -1,0 +1,27 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    >
+
+  <!-- Read-only report endpoints: they serve what the last check stored and
+       never run a check, which would take minutes and time the request out. -->
+
+  <plone:service
+      method="GET"
+      name="@linkchecker"
+      for="plone.base.interfaces.IPloneSiteRoot"
+      factory=".report.LinkcheckerReport"
+      permission="rer.linkchecker.ViewReport"
+      layer="rer.linkchecker.interfaces.IBrowserLayer"
+      />
+
+  <plone:service
+      method="GET"
+      name="@linkchecker-csv"
+      for="plone.base.interfaces.IPloneSiteRoot"
+      factory=".csv_export.LinkcheckerCsv"
+      permission="rer.linkchecker.ViewReport"
+      layer="rer.linkchecker.interfaces.IBrowserLayer"
+      />
+
+</configure>

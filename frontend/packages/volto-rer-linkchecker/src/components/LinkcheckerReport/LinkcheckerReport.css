@@ -1,0 +1,34 @@
+.controlpanel-linkchecker .linkchecker-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.controlpanel-linkchecker .linkchecker-controls .field {
+  min-width: 18rem;
+  flex: 1 1 18rem;
+  margin-bottom: 0;
+}
+
+.controlpanel-linkchecker .linkchecker-download {
+  flex: 0 0 auto;
+}
+
+/* the link is the long, wrap-anywhere column: everything else stays readable */
+.controlpanel-linkchecker .linkchecker-link {
+  max-width: 28rem;
+  overflow-wrap: anywhere;
+}
+
+.controlpanel-linkchecker .linkchecker-status {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* internal links are broken inside the site, so they are ours to fix: mark
+   them apart from the external ones, which depend on somebody else */
+.controlpanel-linkchecker .link-type-internal .linkchecker-status {
+  font-weight: 700;
+}

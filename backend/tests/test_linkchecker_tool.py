@@ -147,7 +147,7 @@ class TestLinkCheckerTool:
         )
         broken_links = dict(tool.get_page_with_broken_links())
         assert broken_links[document.UID()] == [("https://example.com/broken", 404)]
-        rows = list(tool.get_rows(broken=True))
+        rows = list(tool.get_rows())
         assert len(rows) == 2  # header + the 404 row
 
     def test_deleted_content_is_skipped_in_report(self, linkchecker_content):
@@ -159,7 +159,7 @@ class TestLinkCheckerTool:
         )
         broken_links = dict(tool.get_page_with_broken_links())
         assert "gone-uid" not in broken_links
-        rows = list(tool.get_rows(broken=True))
+        rows = list(tool.get_rows())
         assert len(rows) == 1  # header only, the gone content is skipped
 
     def test_bot_protected_links_are_not_broken(self, linkchecker_content):
@@ -178,10 +178,80 @@ class TestLinkCheckerTool:
         broken_links = dict(tool.get_page_with_broken_links())
         assert broken_links[document.UID()] == [("https://foo.com/broken", 404)]
         # the blocked ones still show in the csv, with a dedicated description
-        rows = list(tool.get_rows(broken=True))
+        rows = list(tool.get_rows())
         blocked = [row for row in rows if row[3] == 999]
         assert len(blocked) == 1
         assert "Blocked by bot protection" in blocked[0][4]
+
+    def test_get_broken_links_shape(self, linkchecker_content):
+        tool = linkchecker_content["tool"]
+        document = linkchecker_content["document"]
+        now = datetime.now()
+        tool._outgoing_links.clear()
+        tool._outgoing_links[document.UID()] = (
+            now,
+            [
+                ("https://example.com/fine", 200),  # never reported
+                ("https://example.com/gone", 404),
+                ("/resolveuid/deadbeef", 404),
+                ("https://linkedin.com/x", 999),
+            ],
+        )
+        items = list(tool.get_broken_links())
+        assert [item["link"] for item in items] == [
+            "https://example.com/gone",
+            "/resolveuid/deadbeef",
+            "https://linkedin.com/x",
+        ]
+        gone = items[0]
+        assert gone["@id"] == document.absolute_url()
+        assert gone["title"] == document.Title()
+        assert gone["UID"] == document.UID()
+        assert gone["link_type"] == "EXTERNAL"
+        assert gone["status"] == 404
+        assert gone["status_description"] == "Not Found"
+        assert gone["last_update"] == now
+        assert items[1]["link_type"] == "INTERNAL"
+        # bot-protected links are part of this view, unlike
+        # get_page_with_broken_links: they carry their own description so a
+        # report can tell "not verifiable" apart from "broken"
+        assert "Blocked by bot protection" in items[2]["status_description"]
+
+    def test_get_broken_links_skips_deleted_content(self, linkchecker_content):
+        tool = linkchecker_content["tool"]
+        tool._outgoing_links["gone-uid"] = (
+            datetime.now(),
+            [("https://example.com/broken", 404)],
+        )
+        assert not [
+            item for item in tool.get_broken_links() if item["UID"] == "gone-uid"
+        ]
+
+    def test_filter_links(self, linkchecker_content):
+        tool = linkchecker_content["tool"]
+        document = linkchecker_content["document"]
+        tool._outgoing_links.clear()
+        tool._outgoing_links[document.UID()] = (
+            datetime.now(),
+            [
+                ("https://example.com/gone", 404),
+                ("/resolveuid/deadbeef", 404),
+                ("https://linkedin.com/x", 999),
+            ],
+        )
+        items = list(tool.get_broken_links())
+
+        by_status = list(tool.filter_links(items, status=[999]))
+        assert [item["status"] for item in by_status] == [999]
+
+        by_two_statuses = list(tool.filter_links(items, status=[404, 999]))
+        assert len(by_two_statuses) == 3
+
+        by_type = list(tool.filter_links(items, link_type="INTERNAL"))
+        assert [item["link"] for item in by_type] == ["/resolveuid/deadbeef"]
+
+        both = list(tool.filter_links(items, status=[404], link_type="EXTERNAL"))
+        assert [item["link"] for item in both] == ["https://example.com/gone"]
 
     def test_broken_http_link_working_on_https(self, linkchecker_content):
         tool = linkchecker_content["tool"]
