@@ -115,7 +115,7 @@ create-site: $(VENV_FOLDER) instance/etc/zope.ini ## Create a new site from scra
 	@$(BIN_FOLDER)/zconsole run instance/etc/zope.conf ./scripts/create_site.py
 
 .PHONY: check-broken-links
-check-broken-links: $(VENV_FOLDER) instance/etc/zope.ini ## Check broken links on a Plone site and write a csv report (extra flags: make check-broken-links ARGS="--ttl 0")
+check-broken-links: $(VENV_FOLDER) instance/etc/zope.ini ## Check broken links on a Plone site and store the report (extra flags: make check-broken-links ARGS="--ttl 0")
 	@$(BIN_FOLDER)/zconsole run instance/etc/zope.conf $(BIN_FOLDER)/check_broken_links $(ARGS)
 
 # Example Content

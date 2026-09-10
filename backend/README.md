@@ -75,12 +75,16 @@ Installed as a standard `console_scripts` entry point (`[project.scripts]` in `p
 Options:
 
 - `--ttl`, `--workers`, `--timeout`: same meaning as on `check_site()`.
-- `--output-dir`: directory where the csv report is written (default: cwd).
+- `--output-dir`: also dump the run as a csv in this directory (default: no csv).
 - `--site-id`: id of the Plone site to check (default: the `PLONE_SITE_ID` env var, or `Plone`).
 - `--url <url>`: verify a single url and log its status, without touching the site.
 - `--content <path-or-UID>`: verify a single content's links and log them, without touching the site.
 
-The csv is written to `<output-dir>/<siteid>_broken_links_<YYYYMMDD-HHMMSS>.csv`.
+The script stores the report in the site, which is where the REST API endpoints below read it
+from: that is the normal way to get at the result. With `--output-dir` it also writes
+`<output-dir>/<siteid>_broken_links_<YYYYMMDD-HHMMSS>.csv`, byte for byte the csv
+`@linkchecker-csv` serves — worth it only to keep an archive of past runs, since the site holds
+the last one alone.
 
 ### The REST API endpoints
 

@@ -1,11 +1,12 @@
-"""Run the portal_linkchecker over a Plone site and dump a csv report of
-the broken links. Same logic as the @@find-broken-links view, but runnable
+"""Run the portal_linkchecker over a Plone site and store the report of the
+broken links. Same logic as the @@find-broken-links view, but runnable
 from the command line / cron. This module backs the ``check_broken_links``
 console script registered in pyproject.toml, so it is invoked as:
 
-    ./bin/zconsole run instance/etc/zope.conf ./.venv/bin/check_broken_links
-    ./bin/zconsole run instance/etc/zope.conf ./.venv/bin/check_broken_links --ttl 0 --workers 20
-    ./bin/zconsole run instance/etc/zope.conf ./.venv/bin/check_broken_links --output-dir /tmp
+    ZCONSOLE="./bin/zconsole run instance/etc/zope.conf"
+    $ZCONSOLE ./.venv/bin/check_broken_links
+    $ZCONSOLE ./.venv/bin/check_broken_links --ttl 0 --workers 20
+    $ZCONSOLE ./.venv/bin/check_broken_links --output-dir /tmp
 
 or, in a zc.buildout instance:
 
@@ -17,11 +18,15 @@ inject into the top-level script's namespace: that injection is invisible to
 a separately imported module. Instead ``run()`` bootstraps its own root
 object exactly like ``Zope2.utilities.zconsole.runscript`` does.
 
-Targets the site with id ``PLONE_SITE_ID`` (default ``Plone``); use ``--site-id`` to target a different one.
+Targets the site with id ``PLONE_SITE_ID`` (default ``Plone``); use
+``--site-id`` to target a different one.
 
-The csv (PAGE, LINK, TYPE, STATUS, DESCRIPTION) is written to
-<output-dir>/<siteid>_broken_links_<YYYYMMDD-HHMMSS>.csv (default: current
-directory); the timestamp keeps each run's report distinct.
+The result is stored in the site and read back from there, by the
+``@linkchecker`` / ``@linkchecker-csv`` endpoints: this script only refreshes
+it. Pass ``--output-dir`` to also dump the run as a csv (PAGE, LINK, TYPE,
+STATUS, DESCRIPTION) in <output-dir>/<siteid>_broken_links_<YYYYMMDD-HHMMSS>.csv,
+whose timestamp keeps each run's file distinct: useful to keep an archive of
+past runs, which the site only ever holds for the last one.
 """
 
 from AccessControl.SecurityManagement import newSecurityManager
@@ -29,6 +34,7 @@ from AccessControl.users import system as system_user
 from datetime import datetime
 from plone import api
 from rer.linkchecker.linkchecker import DEFAULT_TIMEOUT
+from rer.linkchecker.linkchecker import format_duration
 from Testing.makerequest import makerequest
 from transaction import commit
 from zope.component.hooks import setSite
@@ -43,6 +49,9 @@ import Zope2
 
 
 logger = logging.getLogger("check_broken_links")
+
+LOG_FORMAT = "%(asctime)s %(levelname)-7s %(name)s: %(message)s"
+LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def parse_args(argv):
@@ -72,8 +81,9 @@ def parse_args(argv):
     )
     parser.add_argument(
         "--output-dir",
-        default=os.getcwd(),
-        help="directory where the csv files are written (default: cwd).",
+        default=None,
+        help="also dump the run as a csv in this directory (default: no csv, "
+        "since the stored report is served by the @linkchecker-csv endpoint).",
     )
     parser.add_argument(
         "--site-id",
@@ -128,28 +138,40 @@ def check_site_report(site, args):
         if args.workers is not None:
             kwargs["max_workers"] = args.workers
 
-        logger.info("## [%s] start check_site(%s) ##", site_id, kwargs)
+        # spelled out as the call it is: with no flags the dict repr would log
+        # a puzzling "check_site({})", which reads like a wrong argument
+        options = ", ".join(f"{name}={value}" for name, value in kwargs.items())
+        logger.info("## [%s] start check_site(%s) ##", site_id, options)
         tool.check_site(**kwargs)
         commit()
 
-        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        output = os.path.join(
-            args.output_dir, f"{site_id}_broken_links_{timestamp}.csv"
-        )
-        rows = 0
-        with open(output, "w", newline="") as fh:
-            writer = csv.writer(fh, quoting=csv.QUOTE_ALL)
-            for row in tool.get_rows():
-                writer.writerow(row)
-                rows += 1
-        # rows includes the header line
+        broken = sum(1 for _ in tool.get_broken_links())
+        output = write_csv(tool, site_id, args.output_dir)
         logger.info(
-            "## [%s] done in %ss, %d broken links -> %s ##",
+            "## [%s] done in %s, %d broken links%s ##",
             site_id,
-            tool._last_duration,
-            max(rows - 1, 0),
-            output,
+            format_duration(tool._last_duration),
+            broken,
+            f" -> {output}" if output else "",
         )
+
+
+def write_csv(tool, site_id, output_dir):
+    """Dump the stored report as a csv file, and return its path.
+
+    Only when asked for: the report lives in the site and is served by the
+    @linkchecker-csv endpoint, which renders these very same rows, so the file
+    is an archive of this run rather than the way to read the result.
+    """
+    if not output_dir:
+        return None
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    output = os.path.join(output_dir, f"{site_id}_broken_links_{timestamp}.csv")
+    with open(output, "w", newline="") as fh:
+        writer = csv.writer(fh, quoting=csv.QUOTE_ALL)
+        for row in tool.get_rows():
+            writer.writerow(row)
+    return output
 
 
 def check_single_url(tool, args, url):
@@ -207,10 +229,27 @@ def _bootstrap_app():
     return app
 
 
-def run():
-    logging.getLogger().setLevel(logging.INFO)
-    for handler in logging.getLogger().handlers:
+def setup_logging():
+    """Log at INFO, with a timestamp on every line.
+
+    The timestamp is the point of it: a full check takes minutes, logs its
+    progress every 5%, and from cron the log is all that is left of the run —
+    without an absolute time there is no telling how long a phase took, nor
+    when the run that produced a given report actually happened.
+
+    Every root handler is reformatted, since the interesting one is whatever
+    zconsole / ``instance run`` installed, and this process is the script.
+    """
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    formatter = logging.Formatter(LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
+    for handler in root.handlers:
         handler.setLevel(logging.INFO)
+        handler.setFormatter(formatter)
+
+
+def run():
+    setup_logging()
 
     args = parse_args(list(sys.argv))
 

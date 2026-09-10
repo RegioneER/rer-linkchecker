@@ -88,7 +88,7 @@ backend-update-example-content: ## Export example content inside package
 	$(MAKE) -C "./backend/" update-example-content
 
 .PHONY: backend-check-broken-links
-backend-check-broken-links: ## Check broken links on the Plone site and write a csv
+backend-check-broken-links: ## Check broken links on the Plone site and store the report
 	$(MAKE) -C "./backend/" check-broken-links
 
 .PHONY: backend-start
