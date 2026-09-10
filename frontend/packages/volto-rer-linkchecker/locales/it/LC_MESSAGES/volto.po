@@ -19,7 +19,7 @@ msgstr "Torna al pannello di controllo"
 #. Default: "Broken links"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Broken links"
-msgstr "Link non raggiungibili"
+msgstr "Link rotti"
 
 #. Default: "Description"
 #: components/LinkcheckerReport/LinkcheckerReport
@@ -59,12 +59,12 @@ msgstr "Caricamento"
 #. Default: "No broken links match the current filters"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "No broken links match the current filters"
-msgstr "Nessun link non raggiungibile corrisponde ai filtri impostati"
+msgstr "Nessun link rotto corrisponde ai filtri impostati"
 
 #. Default: "No broken links were found"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "No broken links were found"
-msgstr "Non è stato trovato nessun link non raggiungibile"
+msgstr "Non è stato trovato nessun link rotto"
 
 #. Default: "No check has run yet"
 #: components/LinkcheckerReport/LinkcheckerReport
@@ -104,7 +104,7 @@ msgstr "Lo scaricamento non è andato a buon fine. Riprova"
 #. Default: "The links found in site contents that could not be reached"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "The links found in site contents that could not be reached"
-msgstr "I link presenti nei contenuti del sito che non è stato possibile raggiungere"
+msgstr "Questa è la lista dei link trovati nei contenuti del sito che sono risultati irraggiungibili."
 
 #. Default: "There is no report to show. Ask the site managers to run the link check"
 #: components/LinkcheckerReport/LinkcheckerReport
