@@ -16,11 +16,6 @@ msgstr ""
 "Preferred-Encodings: utf-8\n"
 "Domain: volto\n"
 
-#. Default: "All"
-#: components/LinkcheckerReport/LinkcheckerReport
-msgid "All"
-msgstr ""
-
 #. Default: "Back to Control Panel"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Back to Control Panel"

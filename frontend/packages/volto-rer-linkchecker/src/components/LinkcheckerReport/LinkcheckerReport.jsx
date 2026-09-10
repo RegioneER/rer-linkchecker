@@ -84,10 +84,6 @@ const messages = defineMessages({
     id: 'Link type',
     defaultMessage: 'Link type',
   },
-  allTypes: {
-    id: 'All',
-    defaultMessage: 'All',
-  },
   internal: {
     id: 'Internal',
     defaultMessage: 'Internal',
@@ -214,11 +210,9 @@ const LinkcheckerReport = (props) => {
   };
 
   const handlePageSizeChange = (event, { value }) => {
-    const size =
-      value === intl.formatMessage(messages.allTypes) ? itemsTotal : value;
-    setPageSize(size);
+    setPageSize(value);
     setCurrentPage(0);
-    fetchReport({ bStart: 0, bSize: size });
+    fetchReport({ bStart: 0, bSize: value });
   };
 
   const handleDownload = async () => {
@@ -327,28 +321,55 @@ const LinkcheckerReport = (props) => {
           <>
             <Segment>
               <div className="linkchecker-controls ui form">
-                <SelectWidget
-                  id="status"
-                  title={intl.formatMessage(messages.statusFilter)}
-                  required={false}
-                  isMulti
-                  value={selectedStatuses}
-                  onChange={handleStatusChange}
-                  choices={statusChoices}
-                  wrapped={false}
-                />
-                <SelectWidget
-                  id="link_type"
-                  title={intl.formatMessage(messages.linkTypeFilter)}
-                  required={false}
-                  value={selectedLinkType}
-                  onChange={handleLinkTypeChange}
-                  choices={[
-                    ['INTERNAL', intl.formatMessage(messages.internal)],
-                    ['EXTERNAL', intl.formatMessage(messages.external)],
-                  ]}
-                  wrapped={false}
-                />
+                {/* wrapped={false} drops the whole FormFieldWrapper, label
+                    included, so each filter carries its own: without it the
+                    two dropdowns show a bare "Select…" and the reader cannot
+                    tell which one filters what. The widget is nested in the
+                    label rather than pointed at with htmlFor, because
+                    react-select puts the id it is given on the container div
+                    and generates the input's own id, which SelectWidget does
+                    not let us set: an htmlFor would name a div. The accessible
+                    name comes from the aria-label SelectWidget builds out of
+                    `title`. */}
+                <label className="linkchecker-filter">
+                  <span className="linkchecker-filter-label">
+                    <FormattedMessage {...messages.statusFilter} />
+                  </span>
+                  <SelectWidget
+                    id="status"
+                    title={intl.formatMessage(messages.statusFilter)}
+                    required={false}
+                    isMulti
+                    value={selectedStatuses}
+                    onChange={handleStatusChange}
+                    choices={statusChoices}
+                    wrapped={false}
+                  />
+                </label>
+                <label className="linkchecker-filter">
+                  <span className="linkchecker-filter-label">
+                    <FormattedMessage {...messages.linkTypeFilter} />
+                  </span>
+                  {/* isClearable so the filter can be removed: without it
+                      react-select shows no reset, and there is no "all" choice
+                      to go back to. Deliberately not set on the multi select
+                      above: its clear-all hands SelectWidget a null that its
+                      onChange maps over unguarded, and each value can be
+                      removed by its own chip anyway. */}
+                  <SelectWidget
+                    id="link_type"
+                    title={intl.formatMessage(messages.linkTypeFilter)}
+                    required={false}
+                    isClearable
+                    value={selectedLinkType}
+                    onChange={handleLinkTypeChange}
+                    choices={[
+                      ['INTERNAL', intl.formatMessage(messages.internal)],
+                      ['EXTERNAL', intl.formatMessage(messages.external)],
+                    ]}
+                    wrapped={false}
+                  />
+                </label>
                 <div className="linkchecker-download">
                   <Button
                     primary
@@ -452,19 +473,21 @@ const LinkcheckerReport = (props) => {
                     </Table.Body>
                   </Table>
 
-                  <Pagination
-                    current={currentPage}
-                    total={totalPages(itemsTotal, pageSize)}
-                    pageSize={pageSize}
-                    pageSizes={[
-                      config.settings.defaultPageSize,
-                      50,
-                      100,
-                      intl.formatMessage(messages.allTypes),
-                    ]}
-                    onChangePage={handlePageChange}
-                    onChangePageSize={handlePageSizeChange}
-                  />
+                  {/* Pagination renders its "Show:" menu whenever pageSize is
+                      set, however few the pages, so a report that fits in one
+                      page is not paginated at all. Measured against the
+                      default size rather than the current one, so raising the
+                      size never hides the control that lowers it again. */}
+                  {itemsTotal > config.settings.defaultPageSize && (
+                    <Pagination
+                      current={currentPage}
+                      total={totalPages(itemsTotal, pageSize)}
+                      pageSize={pageSize}
+                      pageSizes={[config.settings.defaultPageSize, 50, 100]}
+                      onChangePage={handlePageChange}
+                      onChangePageSize={handlePageSizeChange}
+                    />
+                  )}
                 </>
               )}
             </Segment>

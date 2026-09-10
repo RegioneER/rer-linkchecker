@@ -5,10 +5,18 @@
   gap: 1rem;
 }
 
-.controlpanel-linkchecker .linkchecker-controls .field {
+/* the filters are the flex children here: not `.field`, which only exists
+   when SelectWidget renders its FormFieldWrapper, and these do not */
+.controlpanel-linkchecker .linkchecker-controls .linkchecker-filter {
   min-width: 18rem;
   flex: 1 1 18rem;
   margin-bottom: 0;
+}
+
+.controlpanel-linkchecker .linkchecker-controls .linkchecker-filter-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
 }
 
 .controlpanel-linkchecker .linkchecker-download {

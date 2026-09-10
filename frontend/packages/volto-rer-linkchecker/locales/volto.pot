@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-07-31T09:17:15.583Z\n"
+"POT-Creation-Date: 2026-09-10T09:04:03.104Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -12,11 +12,6 @@ msgstr ""
 "Language-Name: English\n"
 "Preferred-Encodings: utf-8\n"
 "Domain: volto\n"
-
-#. Default: "All"
-#: components/LinkcheckerReport/LinkcheckerReport
-msgid "All"
-msgstr ""
 
 #. Default: "Back to Control Panel"
 #: components/LinkcheckerReport/LinkcheckerReport

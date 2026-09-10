@@ -9,7 +9,6 @@ const initialState = {
   items: [],
   items_total: 0,
   summary: [],
-  batching: null,
   // null means "no check has ever run", which the ui must tell apart from
   // "the last check found nothing broken": it is kept as the endpoint sends it
   last_update: null,
@@ -34,7 +33,6 @@ export default function linkchecker(state = initialState, action = {}) {
         items: action.result.items || [],
         items_total: action.result.items_total || 0,
         summary: action.result.summary || [],
-        batching: action.result.batching || null,
         last_update: action.result.last_update ?? null,
         duration: action.result.duration ?? null,
         loading: false,
@@ -47,7 +45,6 @@ export default function linkchecker(state = initialState, action = {}) {
         items: [],
         items_total: 0,
         summary: [],
-        batching: null,
         loading: false,
         loaded: false,
       };
