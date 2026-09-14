@@ -453,13 +453,11 @@ const LinkcheckerReport = (props) => {
                             className="linkchecker-link"
                             data-label={intl.formatMessage(messages.columnLink)}
                           >
-                            <span
-                              className={`linkchecker-type ${
-                                item.link_type === 'INTERNAL'
-                                  ? 'is-internal'
-                                  : 'is-external'
-                              }`}
-                            >
+                            {/* internal and external are told apart in the css
+                                through the row's own link-type class, set
+                                above: the badge does not carry the same fact a
+                                second time */}
+                            <span className="linkchecker-type">
                               <FormattedMessage
                                 {...(item.link_type === 'INTERNAL'
                                   ? messages.internal
