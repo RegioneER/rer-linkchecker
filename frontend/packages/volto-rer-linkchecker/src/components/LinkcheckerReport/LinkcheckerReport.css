@@ -23,20 +23,125 @@
   flex: 0 0 auto;
 }
 
-/* the link is the long, wrap-anywhere column: everything else stays readable */
+/* The icon and the label are two flex children with a gap between them, which
+   is what keeps the svg centred on the label whatever its size: Semantic's own
+   left-labelled icon button positions the icon absolutely in a box sized for an
+   icon font, and an inline svg does not sit in it. Matched through `.ui.button`
+   so this outranks the theme's own button rules rather than depending on which
+   stylesheet the bundler emits last. */
+.controlpanel-linkchecker .ui.button.linkchecker-download-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* The automatic layout sizes columns by their content, which handed half the
+   table to the page title (the longest text) and left the link — the reason
+   the reader opened this page — wrapping in a quarter of it. Fixed layout with
+   an explicit share each, in percentages so the proportion holds at any width.
+   The widths are declared on the header cells: with `table-layout: fixed` the
+   first row is the one that sizes the columns. */
+.controlpanel-linkchecker .linkchecker-table {
+  table-layout: fixed;
+}
+
+.controlpanel-linkchecker .linkchecker-col-page {
+  width: 32%;
+}
+
+.controlpanel-linkchecker .linkchecker-col-link {
+  width: 48%;
+}
+
+.controlpanel-linkchecker .linkchecker-col-status {
+  width: 20%;
+}
+
+/* a url has no spaces to break at, so it breaks anywhere rather than pushing
+   the column past the share above */
 .controlpanel-linkchecker .linkchecker-link {
-  max-width: 28rem;
   overflow-wrap: anywhere;
 }
 
-.controlpanel-linkchecker .linkchecker-status {
-  font-variant-numeric: tabular-nums;
-  text-align: right;
+/* INTERNAL/EXTERNAL travels with the link instead of holding a column of its
+   own: it is an attribute of the link, and as a column it was a single word in
+   the narrowest cell of the table, wrapping one letter per line and doubling
+   the height of every row. */
+.controlpanel-linkchecker .linkchecker-type {
+  display: inline-block;
+  margin-right: 0.5rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 0.25rem;
+  background: #eceff1;
+  color: #546e7a;
+  font-size: 0.75em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  vertical-align: 0.1em;
   white-space: nowrap;
 }
 
 /* internal links are broken inside the site, so they are ours to fix: mark
    them apart from the external ones, which depend on somebody else */
-.controlpanel-linkchecker .link-type-internal .linkchecker-status {
+.controlpanel-linkchecker .linkchecker-type.is-internal {
+  background: #fde7c7;
+  color: #8a5a00;
+}
+
+/* The code carries the meaning and the description glosses it, so they read as
+   one fact: kept inline so a short description ("Not Found") stays on the code's
+   line and only a long one ("Broken over http but works over https: update the
+   link") wraps, instead of every row being two lines tall.
+   No text-align here on purpose: the cms-ui theme sets
+   `.cms-ui .ui.table td { text-align: inherit }`, which outranks any two-class
+   selector — the `text-align: right` this rule used to carry never applied.
+   Left is the right reading order for the description anyway. */
+/* the theme breaks words inside every table cell (`body table th, body table td
+   { word-break: break-word }`), which cut "Unauthorized" into "Unauthori/zed"
+   in this narrow column: here the description wraps as a whole word instead.
+   The link column keeps breaking anywhere, which is what a url needs. */
+.controlpanel-linkchecker .linkchecker-status {
+  word-break: normal;
+}
+
+.controlpanel-linkchecker .linkchecker-status-code {
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
+}
+
+.controlpanel-linkchecker .linkchecker-status-description {
+  margin-left: 0.15rem;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.875em;
+}
+
+/* Semantic's menu is a flex row that never wraps: on a phone the page numbers
+   plus the "show N per page" menu do not fit, and instead of going to a second
+   line they pushed the whole document into a horizontal scroll. */
+.controlpanel-linkchecker .ui.menu,
+.controlpanel-linkchecker .ui.menu .right.menu {
+  flex-wrap: wrap;
+}
+
+/* Below Semantic's stacking breakpoint every row and cell becomes a block. The
+   header is *not* hidden by that (@responsiveHeaderDisplay is `block` in the
+   version in use), so the reader got a stray list of the column names followed
+   by rows of values with nothing to tell them apart. Hide it and give each
+   cell back its own label, from the `data-label` the table sets. */
+@media only screen and (max-width: 767px) {
+  .controlpanel-linkchecker .linkchecker-table thead {
+    display: none;
+  }
+
+  .controlpanel-linkchecker .linkchecker-table td::before {
+    display: block;
+    margin-bottom: 0.1rem;
+    color: rgba(0, 0, 0, 0.6);
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
 }
