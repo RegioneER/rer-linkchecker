@@ -489,12 +489,12 @@ const LinkcheckerReport = (props) => {
                             </span>
                             {item.status_description && (
                               <span className="linkchecker-status-description">
-                                {/* a real space, not a margin: it is the only
-                                    place the line is allowed to break, and
-                                    without it "401" and its description are one
-                                    unbreakable token that overflows the cell */}
-                                {' '}
-                                {item.status_description}
+                                {/* the leading space is a real space, not a
+                                    margin: it is the only place the line is
+                                    allowed to break, and without it "401" and
+                                    its description are one unbreakable token
+                                    that overflows the cell */}
+                                {` ${item.status_description}`}
                               </span>
                             )}
                           </Table.Cell>
