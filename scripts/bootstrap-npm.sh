@@ -5,8 +5,14 @@
 # esiste ancora, quindi la primissima pubblicazione deve essere manuale. Da li'
 # in poi pubblica la CI via OIDC e nessuno deve piu' rinnovare token.
 #
-# Lo script e' idempotente: se il pacchetto esiste gia' non ripubblica, se il
-# trusted publisher e' gia' configurato non lo riconfigura.
+# Lo script pubblica e basta: il trusted publisher si configura dal sito, ed e'
+# lo script stesso a dettare i valori da mettere. La via CLI (`npm trust`)
+# esiste ma non vale la candela: richiede una npm recente (npm 10.9 non ce l'ha,
+# e il giro via `npx npm@latest` e' lento) e soprattutto pretende una sessione
+# con 2FA, quindi fallisce con 403 se si e' autenticati con un granular access
+# token dell'~/.npmrc — che per la publish invece va benissimo.
+#
+# E' idempotente: se il pacchetto esiste gia' non ripubblica.
 #
 # Gestisce da se' login e logout, ma solo della sessione che apre lui: se eri
 # gia' autenticato la lascia intatta, perche' `npm logout` invalida il token
@@ -46,8 +52,6 @@ echo "  registry: ${NPM_REGISTRY}"
 echo "==============================================="
 echo ""
 
-# Autenticazione. Serve comunque: `npm trust list` legge le impostazioni del
-# pacchetto e non funziona da anonimo.
 if npm whoami --registry "${NPM_REGISTRY}" > /dev/null 2>&1; then
     echo "✅ Gia' autenticato come $(npm whoami --registry "${NPM_REGISTRY}")."
     echo "   Sessione preesistente: la lascio aperta a fine script."
@@ -59,7 +63,8 @@ else
 fi
 echo ""
 
-# 1. Pubblicazione iniziale, solo se il pacchetto non esiste ancora.
+# Pubblicazione iniziale, solo se il pacchetto non esiste ancora.
+PUBLISHED=0
 if npm view "${NPM_NAME}" version --registry "${NPM_REGISTRY}" > /dev/null 2>&1; then
     echo "✅ ${NPM_NAME} esiste gia' su npm, salto la publish."
 else
@@ -71,69 +76,36 @@ else
     fi
     echo "==> npm publish --access public --tag ${TAG} --registry ${NPM_REGISTRY}"
     npm publish --access public --tag "${TAG}" --registry "${NPM_REGISTRY}"
-fi
-echo ""
-
-# 2. Trusted publisher, cosi' le release successive non chiedono token.
-#
-# `npm trust` e' recente: npm 10.9 non lo ha ("Unknown command"), npm 12 si'. Per
-# non imporre un upgrade della npm globale (spesso gestita da volta o corepack)
-# si usa npm@latest via npx solo per questo passo. L'autenticazione e' la stessa,
-# perche' legge lo stesso ~/.npmrc.
-NPM_TRUST=(npm)
-if ! npm trust list --help > /dev/null 2>&1; then
-    echo "ℹ️  npm $(npm --version) non ha 'npm trust': per questo passo uso npx npm@latest."
-    NPM_TRUST=(npx -y npm@latest)
+    PUBLISHED=1
 fi
 
-if "${NPM_TRUST[@]}" trust list "${NPM_NAME}" --registry "${NPM_REGISTRY}" 2>/dev/null | grep -q "${GITHUB_SLUG}"; then
-    echo "✅ Trusted publisher gia' configurato per ${GITHUB_SLUG}."
-else
-    echo "==> ${NPM_TRUST[*]} trust github ${NPM_NAME} --file ${WORKFLOW}"
-    # --allow-publish e' obbligatorio per le configurazioni create dopo il
-    # 20 maggio 2026; quelle precedenti avevano il permesso implicito.
-    if ! "${NPM_TRUST[@]}" trust github "${NPM_NAME}" \
-        --file "${WORKFLOW}" \
-        --repository "${GITHUB_SLUG}" \
-        --registry "${NPM_REGISTRY}" \
-        --allow-publish
-    then
-        # Caso visto sul campo: npm risponde 403 "Granular access tokens that
-        # bypass two-factor authentication may not perform this action".
-        # Configurare un trusted publisher e' un'operazione di sicurezza e
-        # pretende una sessione con 2FA, che un granular access token salvato
-        # nell'~/.npmrc non ha. La publish qui sopra invece il token la fa
-        # passare, quindi si arriva a questo punto con il pacchetto gia'
-        # pubblicato: il rilancio dello script salta la publish e ritenta solo
-        # il trust.
-        cat <<MSG
+# Il trusted publisher, da configurare a mano una volta sola. Stampato qui con i
+# valori gia' risolti, cosi' si copiano invece di ricostruirli.
+cat <<MSG
 
-❌ Configurazione del trusted publisher fallita.
+===============================================
+Ultimo passo, a mano e una volta sola: il trusted publisher.
 
-   Se l'errore e' 403 "Granular access tokens that bypass two-factor
-   authentication may not perform this action", sei autenticato con un token
-   che bypassa la 2FA (tipicamente la riga
-   //registry.npmjs.org/:_authToken=... del tuo ~/.npmrc). Due strade:
+  1. apri  https://www.npmjs.com/package/${NPM_NAME}/access
+     (la stessa pagina si raggiunge dal pacchetto -> Settings)
+  2. sezione "Trusted Publisher", scegli GitHub Actions e metti:
 
-     a) npm login --registry ${NPM_REGISTRY}    # flusso web, porta la 2FA
-        e rilancia questo script. Attenzione: il login sovrascrive quella
-        riga dell'~/.npmrc, quindi se quel token ti serve altrove salvalo.
+       organization or user   ${GITHUB_SLUG%%/*}
+       repository             ${GITHUB_SLUG##*/}
+       workflow filename      ${WORKFLOW}
 
-     b) configuralo dal sito, che e' l'altra via ufficiale:
-        https://www.npmjs.com/package/${NPM_NAME} -> Settings ->
-        Trusted Publisher, con repository ${GITHUB_SLUG}, workflow
-        ${WORKFLOW} e il permesso di publish.
+  3. salva, e lascia al publisher il permesso di pubblicare.
 
-   Il resto del bootstrap (la publish) e' gia' a posto: quando il trust c'e',
-   non serve rilanciare nulla.
+Fatto questo, nessuna release chiedera' piu' un token: 'make release' aggiorna
+versioni e changelog e crea il tag, e al push del tag pubblica la CI.
+
+Se il trusted publisher c'e' gia', qui non c'e' altro da fare.
+===============================================
 MSG
-        exit 1
-    fi
-fi
 
-echo ""
-echo "==============================================="
-echo "✅ Bootstrap completato."
-echo "   Da qui in poi pubblica la CI: 'make release' aggiorna versioni e"
-echo "   changelog e crea il tag, il push del tag fa partire ${WORKFLOW}."
-echo "==============================================="
+if [ "${PUBLISHED}" = "1" ]; then
+    echo ""
+    echo "ℹ️  Nota: alla primissima publish npm punta anche 'latest' a"
+    echo "   ${VERSION}, qualunque dist-tag tu abbia usato. Si spostera' da se'"
+    echo "   alla prima versione stabile."
+fi
