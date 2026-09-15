@@ -153,7 +153,7 @@ that date in the `X-Linkchecker-Last-Update` response header.
 ### Setup
 
 ```shell
-git clone git@github.com:RegioneEr/rer-linkchecker.git
+git clone git@github.com:RegioneER/rer-linkchecker.git
 cd rer-linkchecker/backend
 make install
 ```
@@ -169,8 +169,8 @@ make test                   # run the test suite
 
 ## Contribute
 
-- [Issue tracker](https://github.com/RegioneEr/rer-linkchecker/issues)
-- [Source code](https://github.com/RegioneEr/rer-linkchecker/)
+- [Issue tracker](https://github.com/RegioneER/rer-linkchecker/issues)
+- [Source code](https://github.com/RegioneER/rer-linkchecker/)
 
 ## License
 

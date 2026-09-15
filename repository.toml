@@ -3,7 +3,7 @@ name = "rer-linkchecker"
 changelog = "CHANGELOG.md"
 version = "version.txt"
 version_format = "semver"
-container_images_prefix = "ghcr.io/RegioneEr/rer-linkchecker"
+container_images_prefix = "ghcr.io/RegioneER/rer-linkchecker"
 compose = ["docker-compose.yml"]
 
 [repository.towncrier]

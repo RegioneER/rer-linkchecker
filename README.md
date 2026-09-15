@@ -2,7 +2,7 @@
 
 [![Built with Cookieplone](https://img.shields.io/badge/built%20with-Cookieplone-0083be.svg?logo=cookiecutter)](https://github.com/plone/cookieplone-templates/)
 [![Black code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![CI](https://github.com/RegioneEr/rer-linkchecker/actions/workflows/main.yml/badge.svg)](https://github.com/RegioneEr/rer-linkchecker/actions/workflows/main.yml)
+[![CI](https://github.com/RegioneER/rer-linkchecker/actions/workflows/main.yml/badge.svg)](https://github.com/RegioneER/rer-linkchecker/actions/workflows/main.yml)
 
 An addon that check all links in site contents and generate a report with broken ones
 
@@ -24,7 +24,7 @@ An addon that check all links in site contents and generate a report with broken
 1.  Clone this repository, then change your working directory.
 
     ```shell
-    git clone git@github.com:RegioneEr/rer-linkchecker.git
+    git clone git@github.com:RegioneER/rer-linkchecker.git
     cd rer-linkchecker
     ```
 

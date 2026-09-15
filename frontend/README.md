@@ -3,8 +3,8 @@
 An addon that check all links in site contents and generate a report with broken ones
 
 [![npm](https://img.shields.io/npm/v/volto-rer-linkchecker)](https://www.npmjs.com/package/volto-rer-linkchecker)
-[![](https://img.shields.io/badge/-Storybook-ff4785?logo=Storybook&logoColor=white&style=flat-square)](https://RegioneEr.github.io/volto-rer-linkchecker/)
-[![CI](https://github.com/RegioneEr/rer-linkchecker/actions/workflows/main.yml/badge.svg)](https://github.com/RegioneEr/rer-linkchecker/actions/workflows/main.yml)
+[![](https://img.shields.io/badge/-Storybook-ff4785?logo=Storybook&logoColor=white&style=flat-square)](https://RegioneER.github.io/volto-rer-linkchecker/)
+[![CI](https://github.com/RegioneER/rer-linkchecker/actions/workflows/main.yml/badge.svg)](https://github.com/RegioneER/rer-linkchecker/actions/workflows/main.yml)
 
 
 ## Features
@@ -98,7 +98,7 @@ For these reasons, it only works with pnpm and Volto 18.
 1.  Clone this repository, then change your working directory.
 
     ```shell
-    git clone git@github.com:RegioneEr/rer-linkchecker.git
+    git clone git@github.com:RegioneER/rer-linkchecker.git
     cd rer-linkchecker/frontend
     ```
 

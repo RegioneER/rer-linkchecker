@@ -11,10 +11,10 @@
     "react"
   ],
   "author": "RedTurtle Technology",
-  "homepage": "https://github.com/RegioneEr/rer-linkchecker#readme",
+  "homepage": "https://github.com/RegioneER/rer-linkchecker#readme",
   "repository": {
     "type": "git",
-    "url": "git@github.com:RegioneEr/rer-linkchecker"
+    "url": "git@github.com:RegioneER/rer-linkchecker"
   },
   "publishConfig": {
     "@regioneer:registry": "https://registry.npmjs.org/",

@@ -45,10 +45,10 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/RegioneEr/rer-linkchecker"
+Homepage = "https://github.com/RegioneER/rer-linkchecker"
 PyPI = "https://pypi.org/project/rer.linkchecker"
-Source = "https://github.com/RegioneEr/rer-linkchecker"
-Tracker = "https://github.com/RegioneEr/rer-linkchecker/issues"
+Source = "https://github.com/RegioneER/rer-linkchecker"
+Tracker = "https://github.com/RegioneER/rer-linkchecker/issues"
 
 
 [project.entry-points."plone.autoinclude.plugin"]
@@ -90,7 +90,7 @@ filename = "CHANGELOG.md"
 start_string = "<!-- towncrier release notes start -->\n"
 title_format = "## {version} ({project_date})"
 template = "news/.changelog_template.jinja"
-issue_format = "[#{issue}](https://github.com/RegioneEr/rer-linkchecker/issues/{issue})"
+issue_format = "[#{issue}](https://github.com/RegioneER/rer-linkchecker/issues/{issue})"
 underlines = ["", "", ""]
 
 [[tool.towncrier.type]]

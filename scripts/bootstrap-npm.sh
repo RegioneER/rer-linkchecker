@@ -92,16 +92,48 @@ else
     echo "==> ${NPM_TRUST[*]} trust github ${NPM_NAME} --file ${WORKFLOW}"
     # --allow-publish e' obbligatorio per le configurazioni create dopo il
     # 20 maggio 2026; quelle precedenti avevano il permesso implicito.
-    "${NPM_TRUST[@]}" trust github "${NPM_NAME}" \
+    if ! "${NPM_TRUST[@]}" trust github "${NPM_NAME}" \
         --file "${WORKFLOW}" \
         --repository "${GITHUB_SLUG}" \
         --registry "${NPM_REGISTRY}" \
         --allow-publish
+    then
+        # Caso visto sul campo: npm risponde 403 "Granular access tokens that
+        # bypass two-factor authentication may not perform this action".
+        # Configurare un trusted publisher e' un'operazione di sicurezza e
+        # pretende una sessione con 2FA, che un granular access token salvato
+        # nell'~/.npmrc non ha. La publish qui sopra invece il token la fa
+        # passare, quindi si arriva a questo punto con il pacchetto gia'
+        # pubblicato: il rilancio dello script salta la publish e ritenta solo
+        # il trust.
+        cat <<MSG
+
+❌ Configurazione del trusted publisher fallita.
+
+   Se l'errore e' 403 "Granular access tokens that bypass two-factor
+   authentication may not perform this action", sei autenticato con un token
+   che bypassa la 2FA (tipicamente la riga
+   //registry.npmjs.org/:_authToken=... del tuo ~/.npmrc). Due strade:
+
+     a) npm login --registry ${NPM_REGISTRY}    # flusso web, porta la 2FA
+        e rilancia questo script. Attenzione: il login sovrascrive quella
+        riga dell'~/.npmrc, quindi se quel token ti serve altrove salvalo.
+
+     b) configuralo dal sito, che e' l'altra via ufficiale:
+        https://www.npmjs.com/package/${NPM_NAME} -> Settings ->
+        Trusted Publisher, con repository ${GITHUB_SLUG}, workflow
+        ${WORKFLOW} e il permesso di publish.
+
+   Il resto del bootstrap (la publish) e' gia' a posto: quando il trust c'e',
+   non serve rilanciare nulla.
+MSG
+        exit 1
+    fi
 fi
 
 echo ""
 echo "==============================================="
 echo "✅ Bootstrap completato."
-echo "   Da qui in poi pubblica la CI: 'make release' rilascia il backend"
-echo "   e crea il tag, il push del tag fa partire ${WORKFLOW}."
+echo "   Da qui in poi pubblica la CI: 'make release' aggiorna versioni e"
+echo "   changelog e crea il tag, il push del tag fa partire ${WORKFLOW}."
 echo "==============================================="

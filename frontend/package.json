@@ -3,7 +3,7 @@
   "version": "1.0.0-alpha.0",
   "description": "An addon that check all links in site contents and generate a report with broken ones",
   "author": "RedTurtle Technology",
-  "homepage": "https://github.com/RegioneEr/rer-linkchecker",
+  "homepage": "https://github.com/RegioneER/rer-linkchecker",
   "license": "MIT",
   "keywords": [
     "volto-addon",
