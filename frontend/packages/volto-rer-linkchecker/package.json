@@ -34,9 +34,9 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@plone/registry": "workspace:*",
-    "@plone/scripts": "workspace:*",
-    "@plone/types": "workspace:*",
+    "@plone/registry": "^3.0.1",
+    "@plone/scripts": "^4.0.1",
+    "@plone/types": "^2.0.1",
     "@testing-library/react": "^16.2.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
