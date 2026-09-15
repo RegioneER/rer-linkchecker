@@ -8,20 +8,20 @@
 
   <plone:service
       method="GET"
-      name="@linkchecker"
-      for="plone.base.interfaces.IPloneSiteRoot"
       factory=".report.LinkcheckerReport"
+      for="plone.base.interfaces.IPloneSiteRoot"
       permission="rer.linkchecker.ViewReport"
       layer="rer.linkchecker.interfaces.IBrowserLayer"
+      name="@linkchecker"
       />
 
   <plone:service
       method="GET"
-      name="@linkchecker-csv"
-      for="plone.base.interfaces.IPloneSiteRoot"
       factory=".csv_export.LinkcheckerCsv"
+      for="plone.base.interfaces.IPloneSiteRoot"
       permission="rer.linkchecker.ViewReport"
       layer="rer.linkchecker.interfaces.IBrowserLayer"
+      name="@linkchecker-csv"
       />
 
 </configure>
