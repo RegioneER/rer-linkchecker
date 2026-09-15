@@ -17,9 +17,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 PACKAGE_PATH="frontend/packages/volto-rer-linkchecker"
-NPM_NAME="volto-rer-linkchecker"
+NPM_NAME="@regioneer/volto-rer-linkchecker"
 GITHUB_SLUG="RegioneER/rer-linkchecker"
 WORKFLOW="npm.yml"
+# Esplicito e non negoziabile: un `@scope:registry` nell'~/.npmrc di chi lancia
+# lo script dirottererebbe publish e view su un altro registry senza dirlo, e
+# il trusted publisher OIDC esiste solo su npmjs.org.
+NPM_REGISTRY="https://registry.npmjs.org/"
 
 OWNED_SESSION=0
 
@@ -27,7 +31,7 @@ cleanup() {
     if [ "${OWNED_SESSION}" = "1" ]; then
         echo ""
         echo "==> npm logout (chiudo la sessione aperta da questo script)"
-        npm logout || echo "⚠️  logout non riuscito: chiudila a mano con 'npm logout'."
+        npm logout --registry "${NPM_REGISTRY}" || echo "⚠️  logout non riuscito: chiudila a mano con 'npm logout'."
     fi
 }
 trap cleanup EXIT
@@ -38,24 +42,25 @@ VERSION="$(node -p "require('./package.json').version")"
 echo "==============================================="
 echo "Bootstrap npm: ${NPM_NAME}@${VERSION}"
 echo "  repo CI:  ${GITHUB_SLUG}  (workflow ${WORKFLOW})"
+echo "  registry: ${NPM_REGISTRY}"
 echo "==============================================="
 echo ""
 
 # Autenticazione. Serve comunque: `npm trust list` legge le impostazioni del
 # pacchetto e non funziona da anonimo.
-if npm whoami > /dev/null 2>&1; then
-    echo "✅ Gia' autenticato come $(npm whoami)."
+if npm whoami --registry "${NPM_REGISTRY}" > /dev/null 2>&1; then
+    echo "✅ Gia' autenticato come $(npm whoami --registry "${NPM_REGISTRY}")."
     echo "   Sessione preesistente: la lascio aperta a fine script."
 else
     echo "==> npm login (flusso web nel browser)"
-    npm login
+    npm login --registry "${NPM_REGISTRY}"
     OWNED_SESSION=1
-    echo "✅ Autenticato come $(npm whoami). La chiudo io a fine script."
+    echo "✅ Autenticato come $(npm whoami --registry "${NPM_REGISTRY}"). La chiudo io a fine script."
 fi
 echo ""
 
 # 1. Pubblicazione iniziale, solo se il pacchetto non esiste ancora.
-if npm view "${NPM_NAME}" version > /dev/null 2>&1; then
+if npm view "${NPM_NAME}" version --registry "${NPM_REGISTRY}" > /dev/null 2>&1; then
     echo "✅ ${NPM_NAME} esiste gia' su npm, salto la publish."
 else
     # Stesso criterio del workflow: il dist-tag esce dalla versione.
@@ -64,21 +69,33 @@ else
     else
         TAG="latest"
     fi
-    echo "==> npm publish --access public --tag ${TAG}"
-    npm publish --access public --tag "${TAG}"
+    echo "==> npm publish --access public --tag ${TAG} --registry ${NPM_REGISTRY}"
+    npm publish --access public --tag "${TAG}" --registry "${NPM_REGISTRY}"
 fi
 echo ""
 
 # 2. Trusted publisher, cosi' le release successive non chiedono token.
-if npm trust list "${NPM_NAME}" 2>/dev/null | grep -q "${GITHUB_SLUG}"; then
+#
+# `npm trust` e' recente: npm 10.9 non lo ha ("Unknown command"), npm 12 si'. Per
+# non imporre un upgrade della npm globale (spesso gestita da volta o corepack)
+# si usa npm@latest via npx solo per questo passo. L'autenticazione e' la stessa,
+# perche' legge lo stesso ~/.npmrc.
+NPM_TRUST=(npm)
+if ! npm trust list --help > /dev/null 2>&1; then
+    echo "ℹ️  npm $(npm --version) non ha 'npm trust': per questo passo uso npx npm@latest."
+    NPM_TRUST=(npx -y npm@latest)
+fi
+
+if "${NPM_TRUST[@]}" trust list "${NPM_NAME}" --registry "${NPM_REGISTRY}" 2>/dev/null | grep -q "${GITHUB_SLUG}"; then
     echo "✅ Trusted publisher gia' configurato per ${GITHUB_SLUG}."
 else
-    echo "==> npm trust github ${NPM_NAME} --file ${WORKFLOW}"
+    echo "==> ${NPM_TRUST[*]} trust github ${NPM_NAME} --file ${WORKFLOW}"
     # --allow-publish e' obbligatorio per le configurazioni create dopo il
     # 20 maggio 2026; quelle precedenti avevano il permesso implicito.
-    npm trust github "${NPM_NAME}" \
+    "${NPM_TRUST[@]}" trust github "${NPM_NAME}" \
         --file "${WORKFLOW}" \
         --repository "${GITHUB_SLUG}" \
+        --registry "${NPM_REGISTRY}" \
         --allow-publish
 fi
 

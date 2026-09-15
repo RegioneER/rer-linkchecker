@@ -1,4 +1,4 @@
-# RER: Link checker (volto-rer-linkchecker)
+# RER: Link checker (@regioneer/volto-rer-linkchecker)
 
 An addon that check all links in site contents and generate a report with broken ones
 
@@ -18,24 +18,24 @@ To install your project, you must choose the method appropriate to your version 
 
 ### Volto 18 and later
 
-Add `volto-rer-linkchecker` to your `package.json`.
+Add `@regioneer/volto-rer-linkchecker` to your `package.json`.
 
 ```json
 "dependencies": {
-    "volto-rer-linkchecker": "*"
+    "@regioneer/volto-rer-linkchecker": "*"
 }
 ```
 
-Add `volto-rer-linkchecker` to your `volto.config.js`.
+Add `@regioneer/volto-rer-linkchecker` to your `volto.config.js`.
 
 ```javascript
-const addons = ['volto-rer-linkchecker'];
+const addons = ['@regioneer/volto-rer-linkchecker'];
 ```
 
 If this package provides a Volto theme, and you want to activate it, then add the following to your `volto.config.js`.
 
 ```javascript
-const theme = 'volto-rer-linkchecker';
+const theme = '@regioneer/volto-rer-linkchecker';
 ```
 
 ### Volto 17 and earlier
@@ -45,19 +45,19 @@ You can skip this step if you already have one.
 
 ```
 npm install -g yo @plone/generator-volto
-yo @plone/volto my-volto-project --addon volto-rer-linkchecker
+yo @plone/volto my-volto-project --addon @regioneer/volto-rer-linkchecker
 cd my-volto-project
 ```
 
-Add `volto-rer-linkchecker` to your `package.json`.
+Add `@regioneer/volto-rer-linkchecker` to your `package.json`.
 
 ```JSON
 "addons": [
-    "volto-rer-linkchecker"
+    "@regioneer/volto-rer-linkchecker"
 ],
 
 "dependencies": {
-    "volto-rer-linkchecker": "*"
+    "@regioneer/volto-rer-linkchecker": "*"
 }
 ```
 

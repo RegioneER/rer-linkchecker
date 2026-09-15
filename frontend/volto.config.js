@@ -1,4 +1,4 @@
-const addons = ["volto-rer-linkchecker"];
+const addons = ["@regioneer/volto-rer-linkchecker"];
 const theme = "";
 
 module.exports = {

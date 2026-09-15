@@ -116,7 +116,7 @@ importers:
       '@plone/volto':
         specifier: workspace:*
         version: link:core/packages/volto
-      volto-rer-linkchecker:
+      '@regioneer/volto-rer-linkchecker':
         specifier: workspace:*
         version: link:packages/volto-rer-linkchecker
     devDependencies:

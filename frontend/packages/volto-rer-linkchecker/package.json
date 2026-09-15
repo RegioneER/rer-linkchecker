@@ -1,5 +1,5 @@
 {
-  "name": "volto-rer-linkchecker",
+  "name": "@regioneer/volto-rer-linkchecker",
   "version": "1.0.0-alpha.0",
   "description": "An addon that check all links in site contents and generate a report with broken ones",
   "main": "src/index.ts",
@@ -17,6 +17,7 @@
     "url": "git@github.com:RegioneEr/rer-linkchecker"
   },
   "publishConfig": {
+    "@regioneer:registry": "https://registry.npmjs.org/",
     "access": "public"
   },
   "scripts": {

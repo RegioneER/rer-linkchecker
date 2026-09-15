@@ -29,7 +29,7 @@ module.exports = {
           ['@plone/volto-slate', `${coreLocation}/packages/volto-slate/src`],
           ['@plone/registry', `${coreLocation}/packages/registry/src`],
           [
-            'volto-rer-linkchecker',
+            '@regioneer/volto-rer-linkchecker',
             './packages/volto-rer-linkchecker/src',
           ],
           ...addonAliases,

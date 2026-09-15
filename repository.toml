@@ -16,10 +16,12 @@ path = "backend"
 changelog = "backend/CHANGELOG.md"
 towncrier_settings = "backend/pyproject.toml"
 base_package = "Products.CMFPlone"
-publish = true
+# lo pubblichiamo via github actions (pypi.yml), come il frontend: repoplone
+# aggiorna comunque versione e changelog, salta solo build e upload
+publish = false
 
 [frontend.package]
-name = "volto-rer-linkchecker"
+name = "@regioneer/volto-rer-linkchecker"
 path = "frontend/packages/volto-rer-linkchecker"
 changelog = "frontend/packages/volto-rer-linkchecker/CHANGELOG.md"
 towncrier_settings = "frontend/packages/volto-rer-linkchecker/towncrier.toml"
