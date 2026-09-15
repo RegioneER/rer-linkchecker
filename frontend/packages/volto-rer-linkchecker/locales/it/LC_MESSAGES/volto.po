@@ -21,11 +21,6 @@ msgstr "Torna al pannello di controllo"
 msgid "Broken links"
 msgstr "Link rotti"
 
-#. Default: "Description"
-#: components/LinkcheckerReport/LinkcheckerReport
-msgid "Description"
-msgstr "Descrizione"
-
 #. Default: "Download CSV"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Download CSV"
@@ -120,8 +115,3 @@ msgstr "Questo elenco è stato generato il {date}"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "This list was generated on {date} and took {duration} seconds"
 msgstr "Questo elenco è stato generato il {date} e il controllo è durato {duration} secondi"
-
-#. Default: "Type"
-#: components/LinkcheckerReport/LinkcheckerReport
-msgid "Type"
-msgstr "Tipo"

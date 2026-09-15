@@ -21,11 +21,6 @@ msgstr ""
 msgid "Broken links"
 msgstr ""
 
-#. Default: "Description"
-#: components/LinkcheckerReport/LinkcheckerReport
-msgid "Description"
-msgstr ""
-
 #. Default: "Download CSV"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Download CSV"
@@ -119,9 +114,4 @@ msgstr ""
 #. Default: "This list was generated on {date} and took {duration} seconds"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "This list was generated on {date} and took {duration} seconds"
-msgstr ""
-
-#. Default: "Type"
-#: components/LinkcheckerReport/LinkcheckerReport
-msgid "Type"
 msgstr ""

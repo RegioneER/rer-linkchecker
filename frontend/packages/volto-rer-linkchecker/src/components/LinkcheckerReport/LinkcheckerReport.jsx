@@ -108,17 +108,12 @@ const messages = defineMessages({
     id: 'Link',
     defaultMessage: 'Link',
   },
-  columnType: {
-    id: 'Type',
-    defaultMessage: 'Type',
-  },
+  // Heads the cell that carries both the code and its description: the code is
+  // the datum, the description only spells it out, so one column answers for
+  // both. See the table below for why they are not two columns any more.
   columnStatus: {
     id: 'Status code',
     defaultMessage: 'Status code',
-  },
-  columnDescription: {
-    id: 'Description',
-    defaultMessage: 'Description',
   },
   results: {
     id: 'Results',
@@ -371,10 +366,15 @@ const LinkcheckerReport = (props) => {
                   />
                 </label>
                 <div className="linkchecker-download">
+                  {/* No `icon labelPosition="left"`: that lays the icon out as
+                      an absolutely positioned box of its own, sized for an icon
+                      font, and Volto's Icon is an inline svg carrying its own
+                      width and height — it came out hanging off the top of the
+                      button. A plain button lines the two up with flex, in the
+                      css. */}
                   <Button
                     primary
-                    icon
-                    labelPosition="left"
+                    className="linkchecker-download-button"
                     loading={downloading}
                     disabled={downloading || itemsTotal === 0}
                     onClick={handleDownload}
@@ -413,23 +413,26 @@ const LinkcheckerReport = (props) => {
                   <Header as="h2">
                     <FormattedMessage {...messages.results} /> ({itemsTotal})
                   </Header>
+                  {/* Three columns, not five. The link is what the reader is
+                      here for, and with five columns it got a quarter of the
+                      table while the page title took half of it. The two that
+                      went away were not carrying a column's worth of meaning:
+                      the type is an attribute of the link, and the status
+                      description is the status code spelled out.
+                      Every cell names its own column in `data-label`, which is
+                      what the stacked layout shows below the mobile breakpoint,
+                      where a table header cannot follow the values. */}
                   <Table celled striped className="linkchecker-table">
                     <Table.Header>
                       <Table.Row>
-                        <Table.HeaderCell>
+                        <Table.HeaderCell className="linkchecker-col-page">
                           <FormattedMessage {...messages.columnPage} />
                         </Table.HeaderCell>
-                        <Table.HeaderCell>
+                        <Table.HeaderCell className="linkchecker-col-link">
                           <FormattedMessage {...messages.columnLink} />
                         </Table.HeaderCell>
-                        <Table.HeaderCell>
-                          <FormattedMessage {...messages.columnType} />
-                        </Table.HeaderCell>
-                        <Table.HeaderCell>
+                        <Table.HeaderCell className="linkchecker-col-status">
                           <FormattedMessage {...messages.columnStatus} />
-                        </Table.HeaderCell>
-                        <Table.HeaderCell>
-                          <FormattedMessage {...messages.columnDescription} />
                         </Table.HeaderCell>
                       </Table.Row>
                     </Table.Header>
@@ -439,12 +442,28 @@ const LinkcheckerReport = (props) => {
                           key={`${item.UID}-${item.link}`}
                           className={`link-type-${item.link_type.toLowerCase()}`}
                         >
-                          <Table.Cell>
+                          <Table.Cell
+                            data-label={intl.formatMessage(messages.columnPage)}
+                          >
                             <Link to={flattenToAppURL(item['@id'])}>
                               {item.title}
                             </Link>
                           </Table.Cell>
-                          <Table.Cell className="linkchecker-link">
+                          <Table.Cell
+                            className="linkchecker-link"
+                            data-label={intl.formatMessage(messages.columnLink)}
+                          >
+                            {/* internal and external are told apart in the css
+                                through the row's own link-type class, set
+                                above: the badge does not carry the same fact a
+                                second time */}
+                            <span className="linkchecker-type">
+                              <FormattedMessage
+                                {...(item.link_type === 'INTERNAL'
+                                  ? messages.internal
+                                  : messages.external)}
+                              />
+                            </span>
                             {item.link_type === 'EXTERNAL' ? (
                               <a
                                 href={item.link}
@@ -457,17 +476,26 @@ const LinkcheckerReport = (props) => {
                               item.link
                             )}
                           </Table.Cell>
-                          <Table.Cell>
-                            <FormattedMessage
-                              {...(item.link_type === 'INTERNAL'
-                                ? messages.internal
-                                : messages.external)}
-                            />
+                          <Table.Cell
+                            className="linkchecker-status"
+                            data-label={intl.formatMessage(
+                              messages.columnStatus,
+                            )}
+                          >
+                            <span className="linkchecker-status-code">
+                              {item.status}
+                            </span>
+                            {item.status_description && (
+                              <span className="linkchecker-status-description">
+                                {/* the leading space is a real space, not a
+                                    margin: it is the only place the line is
+                                    allowed to break, and without it "401" and
+                                    its description are one unbreakable token
+                                    that overflows the cell */}
+                                {` ${item.status_description}`}
+                              </span>
+                            )}
                           </Table.Cell>
-                          <Table.Cell className="linkchecker-status">
-                            {item.status}
-                          </Table.Cell>
-                          <Table.Cell>{item.status_description}</Table.Cell>
                         </Table.Row>
                       ))}
                     </Table.Body>
