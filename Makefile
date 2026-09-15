@@ -152,7 +152,7 @@ test:  backend-test frontend-test ## Test codebase
 # Release
 ###########################################
 .PHONY: release
-release:  ## Rilascia il backend su PyPI e crea il tag (il frontend lo pubblica la CI)
+release:  ## Aggiorna versioni e changelog e crea il tag (i pacchetti li pubblica la CI)
 	@bash ./scripts/release.sh
 
 .PHONY: bootstrap-npm

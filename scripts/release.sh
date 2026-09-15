@@ -1,10 +1,11 @@
 #!/bin/bash
-# Rilascia il backend su PyPI e crea il tag.
+# Aggiorna versioni e changelog, e crea il tag.
 #
-# Il frontend NON viene pubblicato da qui: repository.toml ha
-# `publish = false` in [frontend.package], e ci pensa la CI al push del tag
-# (.github/workflows/npm.yml) autenticandosi via OIDC. Per questo qui non
-# serve nessun token npm, che scadrebbe ogni 90 giorni.
+# Non pubblica niente: repository.toml ha `publish = false` sia in
+# [backend.package] sia in [frontend.package], e ai due pacchetti pensa la CI
+# al push del tag (.github/workflows/pypi.yml e npm.yml), autenticandosi via
+# OIDC. Per questo qui non serve nessun token: ne' UV_PUBLISH_TOKEN, ne' un
+# token npm, che per giunta scadrebbe ogni 90 giorni.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,12 +15,8 @@ echo "==============================================="
 echo "Release rer-linkchecker"
 echo "==============================================="
 
-if [ -z "${UV_PUBLISH_TOKEN:-}" ]; then
-    echo "❌ UV_PUBLISH_TOKEN non impostato (serve per pubblicare su PyPI)."
-    echo "   export UV_PUBLISH_TOKEN='...'"
-    echo "   export GITHUB_TOKEN='...'   # opzionale, per la GitHub release"
-    exit 1
-fi
+# Nessun token richiesto per pubblicare. Resta opzionale GITHUB_TOKEN, che
+# serve solo a creare la GitHub release: senza, repoplone la salta e avvisa.
 
 # repoplone aggiorna anche versione e changelog del pacchetto frontend, quindi
 # node serve comunque, pur senza pubblicare su npm.
@@ -46,9 +43,12 @@ uvx repoplone release
 
 echo ""
 echo "==============================================="
-echo "✅ Backend rilasciato e tag creato."
+echo "✅ Versioni, changelog e tag creati."
 echo ""
-echo "Il frontend lo pubblica la CI al push del tag."
-echo "Se il workflow npm fallisce, NON rifare la release: rilancia"
-echo "'Release latest version on npm' da GitHub Actions indicando il tag."
+echo "I pacchetti li pubblica la CI al push del tag:"
+echo "  backend  -> PyPI  ('Release latest version on PyPI')"
+echo "  frontend -> npm   ('Release latest version on npm')"
+echo ""
+echo "Se uno dei due workflow fallisce, NON rifare la release: rilancia quel"
+echo "workflow da GitHub Actions indicando il tag."
 echo "==============================================="
