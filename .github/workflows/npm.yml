@@ -14,9 +14,35 @@ on:
         required: true
 
 jobs:
+  # Lint e test prima di pubblicare. Non basta la CI: i workflow non si
+  # aspettano fra loro, partono tutti insieme al push del tag, e per giunta
+  # quella sul tag salta ogni job perche' decide dai path modificati, che in un
+  # tag sono zero. Qui sono gli stessi controlli, richiamati dallo stesso
+  # workflow riusabile, cosi' non divergono.
+  #
+  # Nota per il workflow_dispatch: un workflow riusabile gira sempre al commit
+  # di chi lo chiama, quindi i check guardano il ref da cui lanci il workflow,
+  # non l'input `ref` che finisce solo nella checkout della publish.
+  config:
+    uses: ./.github/workflows/config.yml
+
+  checks:
+    name: "Checks"
+    uses: ./.github/workflows/frontend.yml
+    needs:
+      - config
+    with:
+      base-tag: ${{ needs.config.outputs.base-tag }}
+      image-name-prefix: ${{ needs.config.outputs.image-name-prefix }}
+      image-name-suffix: frontend
+      node-version: ${{ needs.config.outputs.node-version }}
+      volto-version: ${{ needs.config.outputs.volto-version }}
+
   release_to_npm:
     name: Release to npm
     runs-on: ubuntu-latest
+    needs:
+      - checks
     permissions:
       contents: read
       id-token: write
