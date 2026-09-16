@@ -26,6 +26,26 @@ class BadChain:
         self.status = status
 
 
+class FakeManagedConnection:
+    """The little RelStorage exposes of a database connection, as far as
+    _drop_db_connections is concerned: a load connection is dropped, a store
+    connection pool drops the connections it is keeping around."""
+
+    def __init__(self):
+        self.dropped = False
+
+    def drop(self):
+        self.dropped = True
+
+    drop_all = drop
+
+
+class FakeRelStorage:
+    def __init__(self):
+        self._load_connection = FakeManagedConnection()
+        self._store_connection_pool = FakeManagedConnection()
+
+
 class FakeSession:
     """``statuses`` maps a url to the status to answer, to a BadChain, or to
     an exception instance to raise."""
@@ -323,3 +343,20 @@ class TestLinkCheckerTool:
             )
             == STATUS_CONNECTION_ERROR
         )
+
+    def test_the_relstorage_connections_are_dropped(self, linkchecker_content):
+        """What _disconnect_db does when there *is* a connection to give back:
+        the tests themselves run on a DemoStorage, which has none."""
+        storage = FakeRelStorage()
+        linkchecker_content["tool"]._drop_db_connections(storage)
+        assert storage._load_connection.dropped
+        assert storage._store_connection_pool.dropped
+
+    def test_nothing_is_dropped_without_a_database_connection(
+        self, linkchecker_content
+    ):
+        """A FileStorage (or the DemoStorage of the tests) is a local file:
+        there is nothing to give back, and above all the transaction must be
+        left alone -- committing here would persist whatever the caller had
+        in flight."""
+        assert linkchecker_content["tool"]._disconnect_db() is False

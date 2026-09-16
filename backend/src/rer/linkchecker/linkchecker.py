@@ -532,18 +532,89 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
             len(statuses),
             ttl,
         )
-        fetched = self._fetch_statuses(
-            to_check,
-            timeout=timeout,
-            max_workers=max_workers,
-            max_per_host=max_per_host,
+        # from here to the transaction.begin() below nothing must touch the
+        # ZODB, or the connection we just gave back would be re-opened right
+        # away: the results are collected in a plain list and written to the
+        # cache once the database is back
+        reconnect = self._disconnect_db()
+        fetched = list(
+            log_progress(
+                self._fetch_statuses(
+                    to_check,
+                    timeout=timeout,
+                    max_workers=max_workers,
+                    max_per_host=max_per_host,
+                ),
+                "EXTERNAL LINKS",
+                len(to_check),
+                unit="links",
+            )
         )
-        for link, status in log_progress(
-            fetched, "EXTERNAL LINKS", len(to_check), unit="links"
-        ):
-            self._external_links_status[link] = (datetime.now(), status)
+        if reconnect:
+            transaction.begin()
+
+        # one timestamp for the whole batch: it is the time of the run, and
+        # the seconds between the first link and the last are of no interest
+        # to a ttl measured in hours
+        now = datetime.now()
+        for link, status in fetched:
+            self._external_links_status[link] = (now, status)
             statuses[link] = status
         return statuses
+
+    def _disconnect_db(self):
+        """Hand the database connection back before the network phase.
+
+        Checking the external links takes minutes, often hours, and never
+        touches the database: RelStorage would sit on an open PostgreSQL
+        session for the whole time -- idle, and between polls idle *in
+        transaction* -- and the server (or a pooler, or a firewall in between)
+        closes a session left inactive that long. The next catalog query then
+        dies with "server closed the connection unexpectedly", throwing away a
+        run that had already done all the expensive work.
+
+        So the transaction is closed and the connection dropped: nothing is
+        held while we are on the network, and there is no server-side timeout
+        to guess. RelStorage opens a new one by itself at the first use that
+        follows, and the caller makes that happen through transaction.begin(),
+        i.e. at a transaction boundary, with a clean poll and a fresh
+        snapshot -- rather than in the middle of a transaction whose MVCC view
+        is older than what a new connection would see.
+
+        Closing the transaction is a formality, since the crawl only reads,
+        but it is a commit rather than an abort so that a caller which did
+        have pending changes does not silently lose them.
+
+        :return: True if the connection was dropped, in which case the caller
+                 must begin a new transaction before touching the ZODB again.
+        """
+        storage = getattr(self._p_jar, "_storage", None)
+        if getattr(storage, "_load_connection", None) is None:
+            # not RelStorage: a FileStorage (or the DemoStorage the tests run
+            # on) is a local file, there is no connection to give back and no
+            # server that could close it under us
+            return False
+
+        transaction.commit()
+        self._drop_db_connections(storage)
+        return True
+
+    @staticmethod
+    def _drop_db_connections(storage):
+        """Close the database connections RelStorage is holding open.
+
+        Best effort: not managing to give a connection back is no reason to
+        lose the run, it only leaves us with the problem we had before.
+        """
+        try:
+            storage._load_connection.drop()
+            # the pool only ever holds connections nobody is using, and they
+            # would go stale just the same
+            store_connection_pool = getattr(storage, "_store_connection_pool", None)
+            if store_connection_pool is not None:
+                store_connection_pool.drop_all()
+        except Exception:
+            logger.exception("Could not drop the database connection(s)")
 
     def _split_cached(self, links, ttl=DEFAULT_TTL):
         """Tell the links whose cached status is still fresh from the rest.
@@ -573,7 +644,8 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         With ``max_workers <= 1`` the checks run inline in the current thread
         (no ThreadPoolExecutor): handy to drop a pdb breakpoint, since a
         debugger cannot attach to worker threads. Nothing here touches the
-        ZODB, precisely because it runs in threads.
+        ZODB: partly because it runs in threads, and partly because while this
+        runs there is no database connection to touch (see _disconnect_db).
         """
         session = requests.Session()
         adapter = HTTPAdapter(pool_connections=max_workers, pool_maxsize=max_workers)
