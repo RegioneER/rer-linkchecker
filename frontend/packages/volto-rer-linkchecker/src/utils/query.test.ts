@@ -95,9 +95,16 @@ describe('formatLastUpdate', () => {
   });
 
   it('formats in the given locale, not as an iso string', () => {
-    const formatted = formatLastUpdate('2026-07-30T03:00:12', 'it-IT');
+    const formatted = formatLastUpdate('2026-07-30T15:04:12', 'it-IT');
     expect(formatted).not.toBeNull();
-    expect(formatted).not.toContain('T');
-    expect(formatted).toContain('2026');
+    expect(formatted?.date).toBe('30/07/2026');
+    expect(formatted?.date).not.toContain('T');
+  });
+
+  it('keeps date and time apart, for a sentence that names them apart', () => {
+    const formatted = formatLastUpdate('2026-07-30T15:04:12', 'it-IT');
+    expect(formatted?.time).toBe('15:04');
+    // the time is not repeated inside the date, nor the other way around
+    expect(formatted?.date).not.toContain(':');
   });
 });

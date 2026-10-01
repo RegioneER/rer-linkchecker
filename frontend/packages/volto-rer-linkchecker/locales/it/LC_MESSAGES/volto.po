@@ -11,35 +11,80 @@ msgstr ""
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
 
+#. Default: "Access not authorized"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Access not authorized"
+msgstr "Accesso non autorizzato"
+
 #. Default: "Back to Control Panel"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Back to Control Panel"
 msgstr "Torna al pannello di controllo"
 
-#. Default: "Broken links"
+#. Default: "Check blocked by too many requests"
 #: components/LinkcheckerReport/LinkcheckerReport
-msgid "Broken links"
-msgstr "Link rotti"
+msgid "Check blocked by too many requests"
+msgstr "Verifica bloccata per troppe richieste"
+
+#. Default: "Check method not allowed"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Check method not allowed"
+msgstr "Metodo di verifica non consentito"
+
+#. Default: "Connection error"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Connection error"
+msgstr "Errore di connessione"
 
 #. Default: "Download CSV"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Download CSV"
 msgstr "Scarica CSV"
 
+#. Default: "Error on the target server"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Error on the target server"
+msgstr "Errore del server di destinazione"
+
 #. Default: "External"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "External"
 msgstr "Esterno"
+
+#. Default: "In the {field} field you can filter the list by the action to take:"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "In the {field} field you can filter the list by the action to take:"
+msgstr "Nel campo {field} puoi filtrare l'elenco in base all'azione da intraprendere:"
 
 #. Default: "Internal"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Internal"
 msgstr "Interno"
 
-#. Default: "Link"
+#. Default: "Invalid request"
 #: components/LinkcheckerReport/LinkcheckerReport
-msgid "Link"
-msgstr "Link"
+msgid "Invalid request"
+msgstr "Richiesta non valida"
+
+#. Default: "Invalid security certificate"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Invalid security certificate"
+msgstr "Certificato di sicurezza non valido"
+
+#. Default: "Link actions"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Link actions"
+msgstr "Azioni sui link"
+
+#. Default: "Link to check"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Link to check"
+msgstr "Link da controllare"
+
+#. Default: "Link to update to HTTPS"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Link to update to HTTPS"
+msgstr "Link da aggiornare a HTTPS"
 
 #. Default: "Link type"
 #: components/LinkcheckerReport/LinkcheckerReport
@@ -66,52 +111,102 @@ msgstr "Non è stato trovato nessun link rotto"
 msgid "No check has run yet"
 msgstr "Nessun controllo è stato ancora eseguito"
 
-#. Default: "Page"
+#. Default: "Outcome"
 #: components/LinkcheckerReport/LinkcheckerReport
-msgid "Page"
-msgstr "Pagina"
+msgid "Outcome"
+msgstr "Esito"
+
+#. Default: "Request blocked"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Request blocked"
+msgstr "Richiesta bloccata"
+
+#. Default: "Resource not found"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Resource not found"
+msgstr "Risorsa non trovata"
+
+#. Default: "Resource removed"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Resource removed"
+msgstr "Risorsa rimossa"
+
+#. Default: "Response too slow (timeout)"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Response too slow (timeout)"
+msgstr "Risposta troppo lenta (Timeout)"
 
 #. Default: "Results"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Results"
 msgstr "Risultati"
 
-#. Default: "Status"
+#. Default: "Service temporarily unavailable"
 #: components/LinkcheckerReport/LinkcheckerReport
-msgid "Status"
-msgstr "Status"
+msgid "Service temporarily unavailable"
+msgstr "Servizio temporaneamente non disponibile"
 
-#. Default: "Status code"
+#. Default: "Site content"
 #: components/LinkcheckerReport/LinkcheckerReport
-msgid "Status code"
-msgstr "Codice di stato"
+msgid "Site content"
+msgstr "Contenuto del sito"
 
-#. Default: "The check runs periodically: to have the list updated, ask the site managers"
+#. Default: "Site link check"
 #: components/LinkcheckerReport/LinkcheckerReport
-msgid "The check runs periodically: to have the list updated, ask the site managers"
-msgstr "Il controllo viene eseguito periodicamente: per aggiornare l'elenco, rivolgiti ai gestori del sito"
+msgid "Site link check"
+msgstr "Verifica dei link del sito"
+
+#. Default: "Target server unreachable"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Target server unreachable"
+msgstr "Server di destinazione non raggiungibile"
 
 #. Default: "The download failed. Try again"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "The download failed. Try again"
 msgstr "Lo scaricamento non è andato a buon fine. Riprova"
 
-#. Default: "The links found in site contents that could not be reached"
+#. Default: "The list shows the site links, internal and external, that the daily automatic check found to be fixed, updated or looked at."
 #: components/LinkcheckerReport/LinkcheckerReport
-msgid "The links found in site contents that could not be reached"
-msgstr "Questa è la lista dei link trovati nei contenuti del sito che sono risultati irraggiungibili."
+msgid "The list shows the site links, internal and external, that the daily automatic check found to be fixed, updated or looked at"
+msgstr "L'elenco mostra i link (interni ed esterni) del sito che, durante la verifica automatica giornaliera, risultano da correggere, da verificare o da aggiornare."
 
 #. Default: "There is no report to show. Ask the site managers to run the link check"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "There is no report to show. Ask the site managers to run the link check"
 msgstr "Non c'è nessun report da mostrare. Chiedi ai gestori del sito di eseguire il controllo dei link"
 
-#. Default: "This list was generated on {date}"
+#. Default: "This list was generated on {date} at {time}. The check runs automatically every day and the list is updated accordingly."
 #: components/LinkcheckerReport/LinkcheckerReport
-msgid "This list was generated on {date}"
-msgstr "Questo elenco è stato generato il {date}"
+msgid "This list was generated on {date} at {time}. The check runs automatically every day and the list is updated accordingly"
+msgstr "L'elenco è stato generato il {date} alle ore {time}. La verifica viene eseguita automaticamente ogni giorno e l'elenco viene aggiornato di conseguenza."
 
-#. Default: "This list was generated on {date} and took {duration} seconds"
+#. Default: "To check"
 #: components/LinkcheckerReport/LinkcheckerReport
-msgid "This list was generated on {date} and took {duration} seconds"
-msgstr "Questo elenco è stato generato il {date} e il controllo è durato {duration} secondi"
+msgid "To check"
+msgstr "Verifica"
+
+#. Default: "To fix"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "To fix"
+msgstr "Correggi"
+
+#. Default: "To update"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "To update"
+msgstr "Aggiorna"
+
+#. Default: "shows reachable links that point to HTTP instead of HTTPS. Edit the url, replacing http with HTTPS."
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "shows reachable links that point to HTTP instead of HTTPS. Edit the url, replacing http with HTTPS"
+msgstr "mostra link raggiungibili che puntano ad HTTP invece che a HTTPS. Devi modificare l'url sostituendo HTTPS ad http."
+
+#. Default: "shows the links that lead to resources that are not available (broken links). Fix them by removing or replacing them."
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "shows the links that lead to resources that are not available (broken links). Fix them by removing or replacing them"
+msgstr "mostra i link che portano a risorse non disponibili (link rotti). Correggili rimuovendoli o sostituendoli."
+
+#. Default: "shows the links the system could not verify. Check them by hand to see whether they work and whether they need fixing."
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "shows the links the system could not verify. Check them by hand to see whether they work and whether they need fixing"
+msgstr "mostra i link che il sistema non ha potuto verificare. Verificali manualmente per controllare se funzionano e se è necessario correggerli."

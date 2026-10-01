@@ -33,31 +33,35 @@ import {
   pageToBStart,
   totalPages,
 } from '../../utils/query';
+import {
+  ACTION_CHECK,
+  ACTION_FIX,
+  ACTION_UPDATE,
+  ACTIONS,
+  countForAction,
+  statusesForAction,
+} from '../../utils/outcomes';
 import './LinkcheckerReport.css';
 
 const messages = defineMessages({
   pageTitle: {
-    id: 'Broken links',
-    defaultMessage: 'Broken links',
+    id: 'Site link check',
+    defaultMessage: 'Site link check',
   },
-  pageDescription: {
-    id: 'The links found in site contents that could not be reached',
+  intro: {
+    id: 'The list shows the site links, internal and external, that the daily automatic check found to be fixed, updated or looked at',
     defaultMessage:
-      'The links found in site contents that could not be reached',
+      'The list shows the site links, internal and external, that the daily automatic check found to be fixed, updated or looked at.',
+  },
+  introFilter: {
+    id: 'In the {field} field you can filter the list by the action to take:',
+    defaultMessage:
+      'In the {field} field you can filter the list by the action to take:',
   },
   generatedOn: {
-    id: 'This list was generated on {date} and took {duration} seconds',
+    id: 'This list was generated on {date} at {time}. The check runs automatically every day and the list is updated accordingly',
     defaultMessage:
-      'This list was generated on {date} and took {duration} seconds',
-  },
-  generatedOnShort: {
-    id: 'This list was generated on {date}',
-    defaultMessage: 'This list was generated on {date}',
-  },
-  askManagers: {
-    id: 'The check runs periodically: to have the list updated, ask the site managers',
-    defaultMessage:
-      'The check runs periodically: to have the list updated, ask the site managers',
+      'This list was generated on {date} at {time}. The check runs automatically every day and the list is updated accordingly.',
   },
   neverRunTitle: {
     id: 'No check has run yet',
@@ -76,9 +80,41 @@ const messages = defineMessages({
     id: 'No broken links match the current filters',
     defaultMessage: 'No broken links match the current filters',
   },
-  statusFilter: {
-    id: 'Status',
-    defaultMessage: 'Status',
+  // The filter the panel is built around. Its label is quoted in the intro
+  // above, from this very message: the field a text points at should be named
+  // by the field itself, or the two drift apart at the first rewording.
+  actionFilter: {
+    id: 'Link actions',
+    defaultMessage: 'Link actions',
+  },
+  // "To fix" rather than "Fix": these msgids travel into the project-wide
+  // catalogue, where a bare "Update" would collide with Volto's own.
+  actionFix: {
+    id: 'To fix',
+    defaultMessage: 'To fix',
+  },
+  actionUpdate: {
+    id: 'To update',
+    defaultMessage: 'To update',
+  },
+  actionCheck: {
+    id: 'To check',
+    defaultMessage: 'To check',
+  },
+  actionFixHelp: {
+    id: 'shows the links that lead to resources that are not available (broken links). Fix them by removing or replacing them',
+    defaultMessage:
+      'shows the links that lead to resources that are not available (broken links). Fix them by removing or replacing them.',
+  },
+  actionUpdateHelp: {
+    id: 'shows reachable links that point to HTTP instead of HTTPS. Edit the url, replacing http with HTTPS',
+    defaultMessage:
+      'shows reachable links that point to HTTP instead of HTTPS. Edit the url, replacing http with HTTPS.',
+  },
+  actionCheckHelp: {
+    id: 'shows the links the system could not verify. Check them by hand to see whether they work and whether they need fixing',
+    defaultMessage:
+      'shows the links the system could not verify. Check them by hand to see whether they work and whether they need fixing.',
   },
   linkTypeFilter: {
     id: 'Link type',
@@ -101,19 +137,19 @@ const messages = defineMessages({
     defaultMessage: 'The download failed. Try again',
   },
   columnPage: {
-    id: 'Page',
-    defaultMessage: 'Page',
+    id: 'Site content',
+    defaultMessage: 'Site content',
   },
   columnLink: {
-    id: 'Link',
-    defaultMessage: 'Link',
+    id: 'Link to check',
+    defaultMessage: 'Link to check',
   },
   // Heads the cell that carries both the code and its description: the code is
   // the datum, the description only spells it out, so one column answers for
   // both. See the table below for why they are not two columns any more.
   columnStatus: {
-    id: 'Status code',
-    defaultMessage: 'Status code',
+    id: 'Outcome',
+    defaultMessage: 'Outcome',
   },
   results: {
     id: 'Results',
@@ -129,6 +165,78 @@ const messages = defineMessages({
   },
 });
 
+/**
+ * What each outcome means, in the words an editor can act on.
+ *
+ * The backend describes a status with the standard http reason phrase, in
+ * english, and has nothing at all to say about the codes outside that table:
+ * 521 and 526 come back with an empty description. These words are shown in
+ * their place. Anything not listed here still falls back to whatever the
+ * backend sent, so an outcome nobody foresaw reads as something rather than as
+ * a bare number.
+ *
+ * Keyed by the status code itself, so the lookup needs no second list kept in
+ * step with this one.
+ */
+const outcomes = defineMessages({
+  '-1': {
+    id: 'Response too slow (timeout)',
+    defaultMessage: 'Response too slow (timeout)',
+  },
+  '-2': {
+    id: 'Link to update to HTTPS',
+    defaultMessage: 'Link to update to HTTPS',
+  },
+  '-3': {
+    id: 'Connection error',
+    defaultMessage: 'Connection error',
+  },
+  400: {
+    id: 'Invalid request',
+    defaultMessage: 'Invalid request',
+  },
+  401: {
+    id: 'Access not authorized',
+    defaultMessage: 'Access not authorized',
+  },
+  403: {
+    id: 'Request blocked',
+    defaultMessage: 'Request blocked',
+  },
+  404: {
+    id: 'Resource not found',
+    defaultMessage: 'Resource not found',
+  },
+  405: {
+    id: 'Check method not allowed',
+    defaultMessage: 'Check method not allowed',
+  },
+  410: {
+    id: 'Resource removed',
+    defaultMessage: 'Resource removed',
+  },
+  429: {
+    id: 'Check blocked by too many requests',
+    defaultMessage: 'Check blocked by too many requests',
+  },
+  500: {
+    id: 'Error on the target server',
+    defaultMessage: 'Error on the target server',
+  },
+  503: {
+    id: 'Service temporarily unavailable',
+    defaultMessage: 'Service temporarily unavailable',
+  },
+  521: {
+    id: 'Target server unreachable',
+    defaultMessage: 'Target server unreachable',
+  },
+  526: {
+    id: 'Invalid security certificate',
+    defaultMessage: 'Invalid security certificate',
+  },
+});
+
 const CSV_FALLBACK_FILENAME = 'broken_links.csv';
 
 /**
@@ -140,13 +248,23 @@ export const filenameFromDisposition = (disposition) => {
   return match ? match[1] : CSV_FALLBACK_FILENAME;
 };
 
+/**
+ * The words for an outcome: ours when we have them for that code, the
+ * backend's otherwise. Empty when neither has any, which is how the cell knows
+ * to show the bare code rather than a dangling dash.
+ */
+const outcomeText = (intl, item) =>
+  outcomes[item.status]
+    ? intl.formatMessage(outcomes[item.status])
+    : item.status_description;
+
 const LinkcheckerReport = (props) => {
   const dispatch = useDispatch();
   const isClient = useClient();
   const intl = useIntl();
   const pathname = props.location?.pathname || '/controlpanel/linkchecker';
 
-  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [selectedAction, setSelectedAction] = useState('');
   const [selectedLinkType, setSelectedLinkType] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(config.settings.defaultPageSize);
@@ -158,7 +276,6 @@ const LinkcheckerReport = (props) => {
     items_total: itemsTotal,
     summary,
     last_update: lastUpdate,
-    duration,
     loading,
     loaded,
     error,
@@ -167,29 +284,43 @@ const LinkcheckerReport = (props) => {
   // bytes, and plone.restapi only accepts the token in the Authorization header
   const token = useSelector((state) => state.userSession?.token);
 
+  // The endpoint filters by status, the panel by action: the action is turned
+  // into the statuses it stands for here, against the summary, which is where
+  // the outcomes nobody classified are found. `action` is taken as an override
+  // of its own because the handler below knows the new action before the state
+  // that holds it has been updated.
   const fetchReport = useCallback(
     (overrides = {}) => {
-      const query = {
-        status: selectedStatuses,
-        linkType: selectedLinkType,
-        bStart: pageToBStart(currentPage, pageSize),
-        bSize: pageSize,
-        ...overrides,
-      };
-      dispatch(getLinkcheckerReport(query));
+      const { action = selectedAction, ...rest } = overrides;
+      dispatch(
+        getLinkcheckerReport({
+          status: statusesForAction(action, summary),
+          linkType: selectedLinkType,
+          bStart: pageToBStart(currentPage, pageSize),
+          bSize: pageSize,
+          ...rest,
+        }),
+      );
     },
-    [dispatch, selectedStatuses, selectedLinkType, currentPage, pageSize],
+    [
+      dispatch,
+      selectedAction,
+      selectedLinkType,
+      currentPage,
+      pageSize,
+      summary,
+    ],
   );
 
   useEffect(() => {
     dispatch(getLinkcheckerReport({ bSize: config.settings.defaultPageSize }));
   }, [dispatch]);
 
-  const handleStatusChange = (id, value) => {
-    const statuses = value || [];
-    setSelectedStatuses(statuses);
+  const handleActionChange = (id, value) => {
+    const action = value || '';
+    setSelectedAction(action);
     setCurrentPage(0);
-    fetchReport({ status: statuses, bStart: 0 });
+    fetchReport({ action, bStart: 0 });
   };
 
   const handleLinkTypeChange = (id, value) => {
@@ -218,7 +349,7 @@ const LinkcheckerReport = (props) => {
       // same filters as the table: whoever narrows the report down and then
       // downloads expects to get what they are looking at
       const queryString = buildQueryString({
-        status: selectedStatuses,
+        status: statusesForAction(selectedAction, summary),
         linkType: selectedLinkType,
       });
       const url = expandToBackendURL(
@@ -256,12 +387,27 @@ const LinkcheckerReport = (props) => {
   }
 
   const neverChecked = loaded && lastUpdate === null;
-  const formattedDate = formatLastUpdate(lastUpdate, intl.locale);
-  const hasFilters = selectedStatuses.length > 0 || Boolean(selectedLinkType);
+  const generatedAt = formatLastUpdate(lastUpdate, intl.locale);
+  const hasFilters = Boolean(selectedAction) || Boolean(selectedLinkType);
 
-  const statusChoices = (summary || []).map((entry) => [
-    String(entry.status),
-    `${entry.status_description} (${entry.count})`,
+  const actionLabels = {
+    [ACTION_FIX]: messages.actionFix,
+    [ACTION_UPDATE]: messages.actionUpdate,
+    [ACTION_CHECK]: messages.actionCheck,
+  };
+  const actionHelp = {
+    [ACTION_FIX]: messages.actionFixHelp,
+    [ACTION_UPDATE]: messages.actionUpdateHelp,
+    [ACTION_CHECK]: messages.actionCheckHelp,
+  };
+  // the count says where the work is before anything is clicked, and a zero
+  // next to "to fix" is the good news this panel exists to deliver
+  const actionChoices = ACTIONS.map((action) => [
+    action,
+    `${intl.formatMessage(actionLabels[action])} (${countForAction(
+      action,
+      summary,
+    )})`,
   ]);
 
   return (
@@ -273,8 +419,36 @@ const LinkcheckerReport = (props) => {
             <FormattedMessage {...messages.pageTitle} />
           </Header>
           <p>
-            <FormattedMessage {...messages.pageDescription} />
+            <FormattedMessage {...messages.intro} />
           </p>
+          {/* The field is named through its own message rather than spelled out
+              again in this sentence: rename the filter and the sentence that
+              points at it follows. A value, not a rich-text tag, because the
+              tag syntax changed across react-intl majors and this addon is
+              built against more than one. */}
+          <p>
+            <FormattedMessage
+              {...messages.introFilter}
+              values={{
+                field: (
+                  <strong>
+                    <FormattedMessage {...messages.actionFilter} />
+                  </strong>
+                ),
+              }}
+            />
+          </p>
+          <ul className="linkchecker-actions-legend">
+            {ACTIONS.map((action) => (
+              <li key={action}>
+                <strong>
+                  <FormattedMessage {...actionLabels[action]} />
+                </strong>
+                {': '}
+                <FormattedMessage {...actionHelp[action]} />
+              </li>
+            ))}
+          </ul>
         </Segment>
 
         <Segment>
@@ -290,23 +464,10 @@ const LinkcheckerReport = (props) => {
           ) : (
             <Message info className="linkchecker-generated-on">
               <p>
-                {duration ? (
-                  <FormattedMessage
-                    {...messages.generatedOn}
-                    values={{
-                      date: formattedDate,
-                      duration: Math.round(duration),
-                    }}
-                  />
-                ) : (
-                  <FormattedMessage
-                    {...messages.generatedOnShort}
-                    values={{ date: formattedDate }}
-                  />
-                )}
-              </p>
-              <p>
-                <FormattedMessage {...messages.askManagers} />
+                <FormattedMessage
+                  {...messages.generatedOn}
+                  values={{ date: generatedAt?.date, time: generatedAt?.time }}
+                />
               </p>
             </Message>
           )}
@@ -328,16 +489,19 @@ const LinkcheckerReport = (props) => {
                     `title`. */}
                 <label className="linkchecker-filter">
                   <span className="linkchecker-filter-label">
-                    <FormattedMessage {...messages.statusFilter} />
+                    <FormattedMessage {...messages.actionFilter} />
                   </span>
+                  {/* One action at a time: the three are a workflow, not a set
+                      of tags. isClearable is how the reader goes back to the
+                      whole report, there being no "all" choice. */}
                   <SelectWidget
-                    id="status"
-                    title={intl.formatMessage(messages.statusFilter)}
+                    id="link_action"
+                    title={intl.formatMessage(messages.actionFilter)}
                     required={false}
-                    isMulti
-                    value={selectedStatuses}
-                    onChange={handleStatusChange}
-                    choices={statusChoices}
+                    isClearable
+                    value={selectedAction}
+                    onChange={handleActionChange}
+                    choices={actionChoices}
                     wrapped={false}
                   />
                 </label>
@@ -345,12 +509,6 @@ const LinkcheckerReport = (props) => {
                   <span className="linkchecker-filter-label">
                     <FormattedMessage {...messages.linkTypeFilter} />
                   </span>
-                  {/* isClearable so the filter can be removed: without it
-                      react-select shows no reset, and there is no "all" choice
-                      to go back to. Deliberately not set on the multi select
-                      above: its clear-all hands SelectWidget a null that its
-                      onChange maps over unguarded, and each value can be
-                      removed by its own chip anyway. */}
                   <SelectWidget
                     id="link_type"
                     title={intl.formatMessage(messages.linkTypeFilter)}
@@ -437,67 +595,74 @@ const LinkcheckerReport = (props) => {
                       </Table.Row>
                     </Table.Header>
                     <Table.Body>
-                      {items.map((item) => (
-                        <Table.Row
-                          key={`${item.UID}-${item.link}`}
-                          className={`link-type-${item.link_type.toLowerCase()}`}
-                        >
-                          <Table.Cell
-                            data-label={intl.formatMessage(messages.columnPage)}
+                      {items.map((item) => {
+                        const outcome = outcomeText(intl, item);
+                        return (
+                          <Table.Row
+                            key={`${item.UID}-${item.link}`}
+                            className={`link-type-${item.link_type.toLowerCase()}`}
                           >
-                            <Link to={flattenToAppURL(item['@id'])}>
-                              {item.title}
-                            </Link>
-                          </Table.Cell>
-                          <Table.Cell
-                            className="linkchecker-link"
-                            data-label={intl.formatMessage(messages.columnLink)}
-                          >
-                            {/* internal and external are told apart in the css
+                            <Table.Cell
+                              data-label={intl.formatMessage(
+                                messages.columnPage,
+                              )}
+                            >
+                              <Link to={flattenToAppURL(item['@id'])}>
+                                {item.title}
+                              </Link>
+                            </Table.Cell>
+                            <Table.Cell
+                              className="linkchecker-link"
+                              data-label={intl.formatMessage(
+                                messages.columnLink,
+                              )}
+                            >
+                              {/* internal and external are told apart in the css
                                 through the row's own link-type class, set
                                 above: the badge does not carry the same fact a
                                 second time */}
-                            <span className="linkchecker-type">
-                              <FormattedMessage
-                                {...(item.link_type === 'INTERNAL'
-                                  ? messages.internal
-                                  : messages.external)}
-                              />
-                            </span>
-                            {item.link_type === 'EXTERNAL' ? (
-                              <a
-                                href={item.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {item.link}
-                              </a>
-                            ) : (
-                              item.link
-                            )}
-                          </Table.Cell>
-                          <Table.Cell
-                            className="linkchecker-status"
-                            data-label={intl.formatMessage(
-                              messages.columnStatus,
-                            )}
-                          >
-                            <span className="linkchecker-status-code">
-                              {item.status}
-                            </span>
-                            {item.status_description && (
-                              <span className="linkchecker-status-description">
-                                {/* the leading space is a real space, not a
+                              <span className="linkchecker-type">
+                                <FormattedMessage
+                                  {...(item.link_type === 'INTERNAL'
+                                    ? messages.internal
+                                    : messages.external)}
+                                />
+                              </span>
+                              {item.link_type === 'EXTERNAL' ? (
+                                <a
+                                  href={item.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {item.link}
+                                </a>
+                              ) : (
+                                item.link
+                              )}
+                            </Table.Cell>
+                            <Table.Cell
+                              className="linkchecker-status"
+                              data-label={intl.formatMessage(
+                                messages.columnStatus,
+                              )}
+                            >
+                              <span className="linkchecker-status-code">
+                                {item.status}
+                              </span>
+                              {outcome && (
+                                <span className="linkchecker-status-description">
+                                  {/* the leading space is a real space, not a
                                     margin: it is the only place the line is
                                     allowed to break, and without it "401" and
                                     its description are one unbreakable token
                                     that overflows the cell */}
-                                {` ${item.status_description}`}
-                              </span>
-                            )}
-                          </Table.Cell>
-                        </Table.Row>
-                      ))}
+                                  {` – ${outcome}`}
+                                </span>
+                              )}
+                            </Table.Cell>
+                          </Table.Row>
+                        );
+                      })}
                     </Table.Body>
                   </Table>
 

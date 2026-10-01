@@ -19,6 +19,18 @@
   font-weight: 600;
 }
 
+/* the three actions are explained under the intro, one line each: a list, not
+   a paragraph, because that is how they are read — looking for the one you are
+   about to pick in the filter */
+.controlpanel-linkchecker .linkchecker-actions-legend {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0 0;
+}
+
+.controlpanel-linkchecker .linkchecker-actions-legend li {
+  margin-bottom: 0.25rem;
+}
+
 .controlpanel-linkchecker .linkchecker-download {
   flex: 0 0 auto;
 }
