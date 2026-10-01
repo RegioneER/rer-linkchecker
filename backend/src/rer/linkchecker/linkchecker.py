@@ -13,7 +13,9 @@ from Products.CMFCore.utils import UniqueObject
 from requests.adapters import HTTPAdapter
 from urllib.parse import urlparse
 from urllib3.exceptions import InsecureRequestWarning
+from rer.linkchecker import _
 from zExceptions import NotFound
+from zope.i18n import translate
 from zope.interface import implementer
 from zope.interface import Interface
 from zope.schema import getFieldsInOrder
@@ -75,11 +77,40 @@ STATUS_HTTPS_ONLY = -2
 # connection error: host unreachable, DNS failure, connection refused/reset...
 STATUS_CONNECTION_ERROR = -3
 
+# translatable descriptions of the statuses a report usually shows. Explicit
+# msgids rather than the english text: 403 and 429 are both "blocked" in
+# english but get different translations, and rewording a default must not
+# drop its translations
 STATUS_DESCRIPTIONS = {
-    STATUS_TIMEOUT: "Timeout (server too slow; try raising the timeout)",
-    STATUS_HTTPS_ONLY: "Broken over http but works over https: update the link",
-    STATUS_CONNECTION_ERROR: "Connection error (host unreachable, DNS failure, ...)",
+    400: _("status_400", default="Bad request"),
+    401: _("status_401", default="Unauthorized"),
+    403: _("status_403", default="Request blocked (forbidden)"),
+    404: _("status_404", default="Not Found"),
+    405: _("status_405", default="Check method not allowed"),
+    410: _("status_410", default="Gone"),
+    429: _("status_429", default="Check blocked: too many requests"),
+    500: _("status_500", default="Internal server error on the target server"),
+    503: _("status_503", default="Service temporarily unavailable"),
+    521: _("status_521", default="Target server is down"),
+    526: _("status_526", default="Invalid SSL certificate"),
+    STATUS_TIMEOUT: _(
+        "status_timeout",
+        default="Timeout (server too slow; try raising the timeout)",
+    ),
+    STATUS_HTTPS_ONLY: _(
+        "status_https_only",
+        default="Broken over http but works over https: update the link",
+    ),
+    STATUS_CONNECTION_ERROR: _(
+        "status_connection_error",
+        default="Connection error (host unreachable, DNS failure, ...)",
+    ),
 }
+# any other bot-protection status (e.g. LinkedIn's 999)
+STATUS_BLOCKED = _(
+    "status_blocked",
+    default="Blocked by bot protection (works for a human, not verifiable)",
+)
 
 
 def format_duration(seconds):
@@ -323,11 +354,20 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         return status in BLOCKED_STATUSES
 
     @classmethod
-    def _status_description(cls, status):
-        """Human readable description of a link status"""
-        if cls._is_blocked(status):
-            return "Blocked by bot protection (works for a human, not verifiable)"
-        return STATUS_DESCRIPTIONS.get(status) or responses.get(status, "")
+    def _status_description(cls, status, request=None):
+        """Human readable description of a link status
+
+        Translated in the language negotiated for request; without one (e.g.
+        the check_broken_links script log) it is the english default.
+        Statuses with no description of their own fall back to the (english)
+        http reason phrase.
+        """
+        message = STATUS_DESCRIPTIONS.get(status)
+        if message is None and cls._is_blocked(status):
+            message = STATUS_BLOCKED
+        if message is None:
+            return responses.get(status, "")
+        return translate(message, context=request)
 
     def get_page_with_broken_links(self):
         """
@@ -337,7 +377,7 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         Bot-protected links (see _is_blocked) are not reported as broken, and
         contents deleted since the last check are skipped.
         """
-        for uid, (_, links) in self._outgoing_links.items():
+        for uid, (_last_update, links) in self._outgoing_links.items():
             if not api.content.find(UID=uid, unrestricted=True):
                 # content deleted after the last check
                 continue
@@ -349,8 +389,10 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
             if broken_links:
                 yield (uid, broken_links)
 
-    def get_broken_links(self):
+    def get_broken_links(self, request=None):
         """Iterate the stored report, one dict per broken link.
+
+        :param request: translate status_description in its language
 
         This is the flat view of the results and the single source every report
         is built from. Unlike get_page_with_broken_links, bot-protected links
@@ -387,7 +429,9 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
                         "INTERNAL" if self._is_internal(link) else "EXTERNAL"
                     ),
                     "status": status,
-                    "status_description": self._status_description(status),
+                    "status_description": self._status_description(
+                        status, request=request
+                    ),
                     "last_update": last_update,
                 }
 
@@ -407,7 +451,7 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
                 continue
             yield item
 
-    def get_rows(self, status=None, link_type=None):
+    def get_rows(self, status=None, link_type=None, request=None):
         """The report as csv rows, header included.
 
         example usage:
@@ -419,7 +463,7 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         """
         yield ["PAGE", "LINK", "TYPE", "STATUS", "DESCRIPTION"]
         items = self.filter_links(
-            self.get_broken_links(), status=status, link_type=link_type
+            self.get_broken_links(request=request), status=status, link_type=link_type
         )
         for item in items:
             yield [

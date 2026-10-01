@@ -21,7 +21,7 @@ class LinkcheckerCsv(LinkcheckerService):
 
         out = StringIO()
         writer = csv.writer(out, quoting=csv.QUOTE_ALL)
-        for row in tool.get_rows(**self.filters()):
+        for row in tool.get_rows(request=self.request, **self.filters()):
             writer.writerow(row)
 
         response = self.request.response

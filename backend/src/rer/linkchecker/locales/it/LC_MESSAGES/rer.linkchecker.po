@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2022-05-25 17:12+0000\n"
+"POT-Creation-Date: 2026-10-01 10:22+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -10,6 +10,97 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0\n"
 "Language-Code: it\n"
-"Language-Name: English\n"
+"Language-Name: Italiano\n"
 "Preferred-Encodings: utf-8 latin1\n"
-"Domain: DOMAIN\n"
+"Domain: rer.linkchecker\n"
+
+#: rer/linkchecker/profiles.zcml:13
+msgid "An addon that check all links in site contents and generate a report with broken ones"
+msgstr ""
+
+#: rer/linkchecker/profiles.zcml:13
+msgid "RER: Link checker: Install"
+msgstr ""
+
+#: rer/linkchecker/profiles.zcml:21
+msgid "RER: Link checker: Uninstall"
+msgstr ""
+
+#: rer/linkchecker/profiles.zcml:21
+msgid "Uninstall RER: Link checker setup."
+msgstr ""
+
+#. Default: "Bad request"
+#: rer/linkchecker/linkchecker.py:85
+msgid "status_400"
+msgstr "Richiesta non valida"
+
+#. Default: "Unauthorized"
+#: rer/linkchecker/linkchecker.py:86
+msgid "status_401"
+msgstr "Accesso non autorizzato"
+
+#. Default: "Request blocked (forbidden)"
+#: rer/linkchecker/linkchecker.py:87
+msgid "status_403"
+msgstr "Richiesta bloccata"
+
+#. Default: "Not Found"
+#: rer/linkchecker/linkchecker.py:88
+msgid "status_404"
+msgstr "Risorsa non trovata"
+
+#. Default: "Check method not allowed"
+#: rer/linkchecker/linkchecker.py:89
+msgid "status_405"
+msgstr "Metodo di verifica non consentito"
+
+#. Default: "Gone"
+#: rer/linkchecker/linkchecker.py:90
+msgid "status_410"
+msgstr "Risorsa rimossa"
+
+#. Default: "Check blocked: too many requests"
+#: rer/linkchecker/linkchecker.py:91
+msgid "status_429"
+msgstr "Verifica bloccata per troppe richieste"
+
+#. Default: "Internal server error on the target server"
+#: rer/linkchecker/linkchecker.py:92
+msgid "status_500"
+msgstr "Errore del server di destinazione"
+
+#. Default: "Service temporarily unavailable"
+#: rer/linkchecker/linkchecker.py:93
+msgid "status_503"
+msgstr "Servizio temporaneamente non disponibile"
+
+#. Default: "Target server is down"
+#: rer/linkchecker/linkchecker.py:94
+msgid "status_521"
+msgstr "Server di destinazione non raggiungibile"
+
+#. Default: "Invalid SSL certificate"
+#: rer/linkchecker/linkchecker.py:95
+msgid "status_526"
+msgstr "Certificato di sicurezza non valido"
+
+#. Default: "Blocked by bot protection (works for a human, not verifiable)"
+#: rer/linkchecker/linkchecker.py:110
+msgid "status_blocked"
+msgstr "Bloccato dalla protezione anti-bot (funziona per un utente, non verificabile)"
+
+#. Default: "Connection error (host unreachable, DNS failure, ...)"
+#: rer/linkchecker/linkchecker.py:104
+msgid "status_connection_error"
+msgstr "Errore di connessione (es. errore DNS, host non raggiungibile, ecc.)"
+
+#. Default: "Broken over http but works over https: update the link"
+#: rer/linkchecker/linkchecker.py:100
+msgid "status_https_only"
+msgstr "Link da aggiornare a HTTPS"
+
+#. Default: "Timeout (server too slow; try raising the timeout)"
+#: rer/linkchecker/linkchecker.py:96
+msgid "status_timeout"
+msgstr "Risposta troppo lenta (Timeout)"

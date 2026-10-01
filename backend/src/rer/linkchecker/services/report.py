@@ -17,7 +17,7 @@ class LinkcheckerReport(LinkcheckerService):
     def reply(self):
         tool = self.tool
         # one walk: the summary counts the whole report, items show a subset
-        all_items = list(tool.get_broken_links())
+        all_items = list(tool.get_broken_links(request=self.request))
         results = list(tool.filter_links(all_items, **self.filters()))
         batch = HypermediaBatch(self.request, results)
 

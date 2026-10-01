@@ -16,6 +16,14 @@ def tool(functional_portal):
 
 
 @pytest.fixture
+def italian(functional_portal):
+    """Let the request pick italian, as a multilingual site would."""
+    api.portal.set_registry_record("plone.available_languages", ["en", "it"])
+    api.portal.set_registry_record("plone.use_request_negotiation", True)
+    transaction.commit()
+
+
+@pytest.fixture
 def report(functional_portal, tool):
     """Store a report on the tool, as the nightly check would have left it."""
     portal = functional_portal
@@ -87,6 +95,21 @@ class TestReportService:
                 ),
                 "count": 1,
             },
+        ]
+
+    def test_descriptions_follow_the_request_language(
+        self, italian, report, manager_request
+    ):
+        data = manager_request.get(
+            "/@linkchecker", headers={"Accept-Language": "it"}
+        ).json()
+        item = next(item for item in data["items"] if item["status"] == 404)
+        assert item["status_description"] == "Risorsa non trovata"
+        # the summary chips read the same translated strings as the rows
+        assert [entry["status_description"] for entry in data["summary"]] == [
+            "Risorsa non trovata",
+            "Bloccato dalla protezione anti-bot (funziona per un utente, "
+            "non verificabile)",
         ]
 
     def test_never_checked_is_told_apart_from_nothing_broken(
@@ -176,6 +199,15 @@ class TestCsvService:
         body = manager_request.get("/@linkchecker-csv?type=INTERNAL").text
         assert "/resolveuid/deadbeef" in body
         assert "example.com" not in body
+
+    def test_csv_descriptions_follow_the_request_language(
+        self, italian, report, manager_request
+    ):
+        body = manager_request.get(
+            "/@linkchecker-csv", headers={"Accept-Language": "it"}
+        ).text
+        assert "Risorsa non trovata" in body
+        assert "Not Found" not in body
 
     def test_never_checked_has_a_filename_without_a_date(
         self, functional_portal, manager_request
