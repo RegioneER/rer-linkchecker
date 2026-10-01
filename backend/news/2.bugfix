@@ -1,0 +1,1 @@
+Give the database connection back while the external links are checked, instead of holding it open for the whole (long) network phase: on RelStorage/PostgreSQL the server closed the idle connection and the run died with "server closed the connection unexpectedly" right before storing its results.
