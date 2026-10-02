@@ -96,11 +96,14 @@ export function totalPages(itemsTotal: number, pageSize: number): number {
  * Formatted in the user's locale: an ISO string is not what a reader wants.
  * Returns null when no check has ever run, which the caller must tell apart
  * from "the last check found nothing".
+ *
+ * Date and time come back apart, because the sentence that carries them names
+ * them apart and is no place to be splitting a formatted string.
  */
 export function formatLastUpdate(
   isoDate: string | null | undefined,
   locale?: string,
-): string | null {
+): { date: string; time: string } | null {
   if (!isoDate) {
     return null;
   }
@@ -108,8 +111,11 @@ export function formatLastUpdate(
   if (Number.isNaN(date.getTime())) {
     return null;
   }
-  return date.toLocaleString(locale, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  return {
+    date: date.toLocaleDateString(locale),
+    time: date.toLocaleTimeString(locale, {
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
+  };
 }
