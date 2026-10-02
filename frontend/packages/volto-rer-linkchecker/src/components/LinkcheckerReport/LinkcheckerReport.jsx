@@ -80,14 +80,13 @@ const messages = defineMessages({
     id: 'No broken links match the current filters',
     defaultMessage: 'No broken links match the current filters',
   },
-  // The filter the panel is built around. Its label is quoted in the intro
-  // above, from this very message: the field a text points at should be named
-  // by the field itself, or the two drift apart at the first rewording.
+  // The intro quotes this very message, so a rename carries over to the text
+  // that points at the field.
   actionFilter: {
     id: 'Link actions',
     defaultMessage: 'Link actions',
   },
-  // "To fix" rather than "Fix": these msgids travel into the project-wide
+  // "To fix" rather than "Fix": these msgids land in the project-wide
   // catalogue, where a bare "Update" would collide with Volto's own.
   actionFix: {
     id: 'To fix',
@@ -144,9 +143,7 @@ const messages = defineMessages({
     id: 'Link to check',
     defaultMessage: 'Link to check',
   },
-  // Heads the cell that carries both the code and its description: the code is
-  // the datum, the description only spells it out, so one column answers for
-  // both. See the table below for why they are not two columns any more.
+  // One column for code and description: the second only spells out the first.
   columnStatus: {
     id: 'Outcome',
     defaultMessage: 'Outcome',
@@ -166,17 +163,10 @@ const messages = defineMessages({
 });
 
 /**
- * What each outcome means, in the words an editor can act on.
- *
- * The backend describes a status with the standard http reason phrase, in
- * english, and has nothing at all to say about the codes outside that table:
- * 521 and 526 come back with an empty description. These words are shown in
- * their place. Anything not listed here still falls back to whatever the
- * backend sent, so an outcome nobody foresaw reads as something rather than as
- * a bare number.
- *
- * Keyed by the status code itself, so the lookup needs no second list kept in
- * step with this one.
+ * What each outcome means, in words an editor can act on. The backend only has
+ * the standard http reason phrase, in english, and nothing at all for the
+ * codes outside that table: 521 and 526 arrive with an empty description.
+ * Keyed by status code; anything unlisted falls back to what the backend sent.
  */
 const outcomes = defineMessages({
   '-1': {
@@ -249,9 +239,8 @@ export const filenameFromDisposition = (disposition) => {
 };
 
 /**
- * The words for an outcome: ours when we have them for that code, the
- * backend's otherwise. Empty when neither has any, which is how the cell knows
- * to show the bare code rather than a dangling dash.
+ * Ours when we have words for that code, the backend's otherwise. Empty when
+ * neither has any, which is how the cell avoids a dangling dash.
  */
 const outcomeText = (intl, item) =>
   outcomes[item.status]
@@ -284,11 +273,8 @@ const LinkcheckerReport = (props) => {
   // bytes, and plone.restapi only accepts the token in the Authorization header
   const token = useSelector((state) => state.userSession?.token);
 
-  // The endpoint filters by status, the panel by action: the action is turned
-  // into the statuses it stands for here, against the summary, which is where
-  // the outcomes nobody classified are found. `action` is taken as an override
-  // of its own because the handler below knows the new action before the state
-  // that holds it has been updated.
+  // The endpoint filters by status, the panel by action. `action` is its own
+  // override because the handler knows it before the state does.
   const fetchReport = useCallback(
     (overrides = {}) => {
       const { action = selectedAction, ...rest } = overrides;
@@ -400,8 +386,7 @@ const LinkcheckerReport = (props) => {
     [ACTION_UPDATE]: messages.actionUpdateHelp,
     [ACTION_CHECK]: messages.actionCheckHelp,
   };
-  // the count says where the work is before anything is clicked, and a zero
-  // next to "to fix" is the good news this panel exists to deliver
+  // the count says where the work is before anything is clicked
   const actionChoices = ACTIONS.map((action) => [
     action,
     `${intl.formatMessage(actionLabels[action])} (${countForAction(
@@ -418,37 +403,39 @@ const LinkcheckerReport = (props) => {
           <Header as="h1">
             <FormattedMessage {...messages.pageTitle} />
           </Header>
-          <p>
-            <FormattedMessage {...messages.intro} />
-          </p>
-          {/* The field is named through its own message rather than spelled out
-              again in this sentence: rename the filter and the sentence that
-              points at it follows. A value, not a rich-text tag, because the
-              tag syntax changed across react-intl majors and this addon is
-              built against more than one. */}
-          <p>
-            <FormattedMessage
-              {...messages.introFilter}
-              values={{
-                field: (
+          {/* one class for the whole intro: the banner styles its contents as
+              a heading, and this is a description */}
+          <div className="linkchecker-intro">
+            <p>
+              <FormattedMessage {...messages.intro} />
+            </p>
+            {/* a value, not a rich-text tag: the tag syntax changed across
+                react-intl majors, and this addon is built against more than
+                one */}
+            <p>
+              <FormattedMessage
+                {...messages.introFilter}
+                values={{
+                  field: (
+                    <strong>
+                      <FormattedMessage {...messages.actionFilter} />
+                    </strong>
+                  ),
+                }}
+              />
+            </p>
+            <ul className="linkchecker-actions-legend">
+              {ACTIONS.map((action) => (
+                <li key={action}>
                   <strong>
-                    <FormattedMessage {...messages.actionFilter} />
+                    <FormattedMessage {...actionLabels[action]} />
                   </strong>
-                ),
-              }}
-            />
-          </p>
-          <ul className="linkchecker-actions-legend">
-            {ACTIONS.map((action) => (
-              <li key={action}>
-                <strong>
-                  <FormattedMessage {...actionLabels[action]} />
-                </strong>
-                {': '}
-                <FormattedMessage {...actionHelp[action]} />
-              </li>
-            ))}
-          </ul>
+                  {': '}
+                  <FormattedMessage {...actionHelp[action]} />
+                </li>
+              ))}
+            </ul>
+          </div>
         </Segment>
 
         <Segment>
@@ -491,9 +478,8 @@ const LinkcheckerReport = (props) => {
                   <span className="linkchecker-filter-label">
                     <FormattedMessage {...messages.actionFilter} />
                   </span>
-                  {/* One action at a time: the three are a workflow, not a set
-                      of tags. isClearable is how the reader goes back to the
-                      whole report, there being no "all" choice. */}
+                  {/* one at a time: the three are a workflow, not tags.
+                      isClearable is the way back to the whole report. */}
                   <SelectWidget
                     id="link_action"
                     title={intl.formatMessage(messages.actionFilter)}
@@ -524,12 +510,9 @@ const LinkcheckerReport = (props) => {
                   />
                 </label>
                 <div className="linkchecker-download">
-                  {/* No `icon labelPosition="left"`: that lays the icon out as
-                      an absolutely positioned box of its own, sized for an icon
-                      font, and Volto's Icon is an inline svg carrying its own
-                      width and height — it came out hanging off the top of the
-                      button. A plain button lines the two up with flex, in the
-                      css. */}
+                  {/* no `icon labelPosition="left"`: it positions the icon
+                      absolutely, in a box sized for an icon font, and Volto's
+                      inline svg hung off the top. Flex instead, in the css. */}
                   <Button
                     primary
                     className="linkchecker-download-button"
@@ -571,15 +554,10 @@ const LinkcheckerReport = (props) => {
                   <Header as="h2">
                     <FormattedMessage {...messages.results} /> ({itemsTotal})
                   </Header>
-                  {/* Three columns, not five. The link is what the reader is
-                      here for, and with five columns it got a quarter of the
-                      table while the page title took half of it. The two that
-                      went away were not carrying a column's worth of meaning:
-                      the type is an attribute of the link, and the status
-                      description is the status code spelled out.
-                      Every cell names its own column in `data-label`, which is
-                      what the stacked layout shows below the mobile breakpoint,
-                      where a table header cannot follow the values. */}
+                  {/* Three columns, not five: the type belongs to the link and
+                      the description to the code. Each cell names its column in
+                      `data-label`, which is what the stacked layout shows on a
+                      phone, where the header cannot follow the values. */}
                   <Table celled striped className="linkchecker-table">
                     <Table.Header>
                       <Table.Row>
@@ -617,10 +595,8 @@ const LinkcheckerReport = (props) => {
                                 messages.columnLink,
                               )}
                             >
-                              {/* internal and external are told apart in the css
-                                through the row's own link-type class, set
-                                above: the badge does not carry the same fact a
-                                second time */}
+                              {/* the css tells the two apart through the row's
+                                own link-type class, set above */}
                               <span className="linkchecker-type">
                                 <FormattedMessage
                                   {...(item.link_type === 'INTERNAL'
@@ -651,11 +627,9 @@ const LinkcheckerReport = (props) => {
                               </span>
                               {outcome && (
                                 <span className="linkchecker-status-description">
-                                  {/* the leading space is a real space, not a
-                                    margin: it is the only place the line is
-                                    allowed to break, and without it "401" and
-                                    its description are one unbreakable token
-                                    that overflows the cell */}
+                                  {/* a real space, not a margin: it is the only
+                                    place the line may break, and without it the
+                                    cell overflows */}
                                   {` – ${outcome}`}
                                 </span>
                               )}

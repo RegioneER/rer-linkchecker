@@ -97,9 +97,8 @@ export function totalPages(itemsTotal: number, pageSize: number): number {
  * Returns null when no check has ever run, which the caller must tell apart
  * from "the last check found nothing".
  *
- * Date and time come back apart because the sentence that carries them names
- * them apart ("generated on <date> at <time>"), and a sentence is not built by
- * splitting a formatted string.
+ * Date and time come back apart, because the sentence that carries them names
+ * them apart and is no place to be splitting a formatted string.
  */
 export function formatLastUpdate(
   isoDate: string | null | undefined,

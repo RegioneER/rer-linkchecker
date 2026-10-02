@@ -19,8 +19,15 @@
   font-weight: 600;
 }
 
-/* the three actions are explained under the intro, one line each: a list, not
-   a paragraph, because that is how they are read — looking for the one you are
+/* the banner around it (`.ui.primary.segment`) styles everything inside as a
+   heading, 16px and bold: this is a description, so body size and muted grey */
+.controlpanel-linkchecker .linkchecker-intro {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.875rem;
+  font-weight: normal;
+}
+
+/* a list, not a paragraph: it is read looking for the one action you are
    about to pick in the filter */
 .controlpanel-linkchecker .linkchecker-actions-legend {
   padding-left: 1.25rem;
@@ -35,24 +42,18 @@
   flex: 0 0 auto;
 }
 
-/* The icon and the label are two flex children with a gap between them, which
-   is what keeps the svg centred on the label whatever its size: Semantic's own
-   left-labelled icon button positions the icon absolutely in a box sized for an
-   icon font, and an inline svg does not sit in it. Matched through `.ui.button`
-   so this outranks the theme's own button rules rather than depending on which
-   stylesheet the bundler emits last. */
+/* Semantic's left-labelled icon button places the icon absolutely, in a box
+   sized for an icon font: an inline svg hangs off the top. Flex instead, and
+   matched through `.ui.button` so it outranks the theme. */
 .controlpanel-linkchecker .ui.button.linkchecker-download-button {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-/* The automatic layout sizes columns by their content, which handed half the
-   table to the page title (the longest text) and left the link — the reason
-   the reader opened this page — wrapping in a quarter of it. Fixed layout with
-   an explicit share each, in percentages so the proportion holds at any width.
-   The widths are declared on the header cells: with `table-layout: fixed` the
-   first row is the one that sizes the columns. */
+/* sized by content, the page title took half the table and the link wrapped
+   in a quarter. Shares fixed here, on the header cells: with
+   `table-layout: fixed` the first row sizes the columns. */
 .controlpanel-linkchecker .linkchecker-table {
   table-layout: fixed;
 }
@@ -75,10 +76,16 @@
   overflow-wrap: anywhere;
 }
 
-/* INTERNAL/EXTERNAL travels with the link instead of holding a column of its
-   own: it is an attribute of the link, and as a column it was a single word in
-   the narrowest cell of the table, wrapping one letter per line and doubling
-   the height of every row. */
+/* the theme drops the underline from every link under /controlpanel, hover
+   included, leaving these two told apart by colour alone. Both classes are on
+   the same element, which outranks `body.cms-ui.section-controlpanel a`. */
+.controlpanel-linkchecker.cms-ui .linkchecker-table td a,
+.controlpanel-linkchecker.cms-ui .linkchecker-table td a:hover {
+  text-decoration: underline;
+}
+
+/* INTERNAL/EXTERNAL is an attribute of the link, not a column: as a column it
+   wrapped one letter per line and doubled the height of every row. */
 .controlpanel-linkchecker .linkchecker-type {
   display: inline-block;
   padding: 0.05rem 0.45rem;
@@ -94,31 +101,23 @@
   white-space: nowrap;
 }
 
-/* internal links are broken inside the site, so they are ours to fix: mark
-   them apart from the external ones, which depend on somebody else. Keyed on
-   the link-type class the row already carries, so the badge does not have to
-   repeat in its own class what the row says. */
+/* internal links are ours to fix, external ones depend on somebody else.
+   Keyed on the class the row already carries. */
 .controlpanel-linkchecker .link-type-internal .linkchecker-type {
   background: #fde7c7;
   color: #8a5a00;
 }
 
-/* the theme breaks words inside every table cell (`body table th, body table td
-   { word-break: break-word }`), which cut "Unauthorized" into "Unauthori/zed"
-   in this narrow column: here the description wraps as a whole word instead.
-   The link column keeps breaking anywhere, which is what a url needs. */
+/* the theme breaks words inside every cell, cutting "Unauthorized" into
+   "Unauthori/zed": here whole words. The link column keeps breaking
+   anywhere, which is what a url needs. */
 .controlpanel-linkchecker .linkchecker-status {
   word-break: normal;
 }
 
-/* The code carries the meaning and the description glosses it, so they read as
-   one fact: kept inline so a short description ("Not Found") stays on the code's
-   line and only a long one ("Broken over http but works over https: update the
-   link") wraps, instead of every row being two lines tall.
-   No text-align here on purpose: the cms-ui theme sets
-   `.cms-ui .ui.table td { text-align: inherit }`, which outranks any two-class
-   selector — the `text-align: right` this rule used to carry never applied.
-   Left is the right reading order for the description anyway. */
+/* code and description read as one fact, inline: stacked, every row was two
+   lines tall. No text-align here — `.cms-ui .ui.table td` outranks a
+   two-class selector, so the one this rule used to carry never applied. */
 .controlpanel-linkchecker .linkchecker-status-code {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -130,19 +129,16 @@
   font-size: 0.875em;
 }
 
-/* Semantic's menu is a flex row that never wraps: on a phone the page numbers
-   plus the "show N per page" menu do not fit, and instead of going to a second
-   line they pushed the whole document into a horizontal scroll. */
+/* Semantic's menu never wraps: on a phone the pager pushed the whole
+   document into a horizontal scroll. */
 .controlpanel-linkchecker .ui.menu,
 .controlpanel-linkchecker .ui.menu .right.menu {
   flex-wrap: wrap;
 }
 
-/* Below Semantic's stacking breakpoint every row and cell becomes a block. The
-   header is *not* hidden by that (@responsiveHeaderDisplay is `block` in the
-   version in use), so the reader got a stray list of the column names followed
-   by rows of values with nothing to tell them apart. Hide it and give each
-   cell back its own label, from the `data-label` the table sets. */
+/* Semantic stacks the table here but leaves the header visible
+   (@responsiveHeaderDisplay is `block`): a stray list of column names, then
+   values with nothing to tell them apart. Hide it, label each cell. */
 @media only screen and (max-width: 767px) {
   .controlpanel-linkchecker .linkchecker-table thead {
     display: none;

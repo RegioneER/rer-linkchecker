@@ -1,10 +1,8 @@
 /**
- * What an editor has to do about a link, and which check outcomes call for it.
+ * What an editor has to do about a link, and which outcomes call for it.
  *
- * The report speaks http status codes; an editor does not, and a filter
- * offering a dozen of them is a filter nobody uses. The panel asks instead
- * which action to take, and this module is the whole of the mapping: editorial
- * policy, kept on its own so it can be read and tested as such.
+ * The report speaks http status codes, an editor does not: the panel asks
+ * which action to take, and this is the whole of the mapping.
  */
 
 export const ACTION_FIX = 'fix';
@@ -27,27 +25,18 @@ const FIX_STATUSES = [404, 410];
 /** Reachable over https, so only the url is out of date. */
 const UPDATE_STATUSES = [-2];
 
-/**
- * Outcomes nobody can act on without going and looking: the server was too
- * slow, unreachable, refused us, blocked the checker, or answered something
- * that is no verdict on the link itself.
- */
+/** Nothing an editor can act on without going and looking. */
 const CHECK_STATUSES = [-1, -3, 400, 401, 403, 405, 429, 500, 503, 521, 526];
 
 /**
- * The statuses to ask the endpoint for, given the action the editor picked.
+ * The statuses to ask the endpoint for, given the action picked.
  *
- * `fix` and `update` are closed lists: each of those outcomes means one thing.
- * `check` is not a list but a remainder — it carries its declared outcomes
- * plus every other one the report happens to hold. The extras are read off the
- * summary, which the endpoint always builds over the *unfiltered* report, so an
- * outcome nobody foresaw (a 502, LinkedIn's 999, whatever a future check
- * returns) is still reachable from a filter instead of sitting in the report
- * with no way to single it out.
+ * `check` is a remainder, not a list: its declared outcomes plus anything else
+ * the report holds, read off the summary (which the endpoint builds over the
+ * unfiltered report), so a 502 or LinkedIn's 999 stays reachable.
  *
- * A known action never returns an empty list, because an empty `status` filter
- * does not mean "nothing matches": it means "no filter", and the panel would
- * answer a request for an empty category with the whole report.
+ * Never empty for a known action: an empty `status` means "no filter", and the
+ * panel would answer an empty category with the whole report.
  */
 export function statusesForAction(
   action: string | null | undefined,
@@ -77,10 +66,8 @@ export function statusesForAction(
 }
 
 /**
- * How many links an action accounts for, out of the same summary.
- *
- * Shown next to each choice, so an editor sees where the work is before
- * clicking: a zero next to "Fix" is the good news the panel exists to deliver.
+ * How many links an action accounts for. Shown next to each choice: a zero
+ * next to "to fix" is good news, worth seeing before clicking.
  */
 export function countForAction(
   action: string | null | undefined,
