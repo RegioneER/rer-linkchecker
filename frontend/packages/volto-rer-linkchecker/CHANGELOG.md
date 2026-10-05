@@ -8,6 +8,12 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.4 (2026-10-05)
+
+### Feature
+
+- Rebuild the panel around the action an editor has to take, rather than around http status codes. The filter now offers "to fix", "to update" and "to check" instead of a dozen raw statuses, each with the count of links behind it; "to check" is a remainder rather than a list, so an outcome nobody classified is still reachable from a filter. Every outcome is spelled out in the editor's own language (521 and 526 had no description at all before, the standard http table not knowing them), the columns are named after what they hold — site content, link to check, outcome — and the page says when the list was generated and that the check runs daily. [#3](https://github.com/RegioneER/rer-linkchecker/issue/3)
+
 ## 1.0.0-alpha.3 (2026-09-16)
 
 ## 1.0.0-alpha.2 (2026-09-15)
