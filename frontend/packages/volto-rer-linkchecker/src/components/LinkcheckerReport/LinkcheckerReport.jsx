@@ -156,9 +156,9 @@ const messages = defineMessages({
     id: 'Loading',
     defaultMessage: 'Loading...',
   },
-  backToControlPanel: {
-    id: 'Back to Control Panel',
-    defaultMessage: 'Back to Control Panel',
+  backToHome: {
+    id: 'Home',
+    defaultMessage: 'Home',
   },
 });
 
@@ -668,12 +668,12 @@ const LinkcheckerReport = (props) => {
             pathname={pathname}
             hideDefaultViewButtons
             inner={
-              <Link to="/controlpanel" className="item">
+              <Link to="/" className="item">
                 <Icon
                   name={backSVG}
                   className="contents circled"
                   size="30px"
-                  title={intl.formatMessage(messages.backToControlPanel)}
+                  title={intl.formatMessage(messages.backToHome)}
                 />
               </Link>
             }
