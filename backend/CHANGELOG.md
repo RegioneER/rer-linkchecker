@@ -9,6 +9,13 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0a5 (2026-10-05)
+
+
+### New features:
+
+- Give the csv report (`@linkchecker-csv`, and the file the `check_broken_links` script writes) the columns and labels of the panel: site content, link to check, link type, outcome, outcome description, translated in the language of the request like the descriptions already were. A new column tells the action to take on each link: to fix, to update or to check. The header names change accordingly: whoever reads the csv by column name (`PAGE`, `STATUS`, ...) has to follow. 
+
 ## 1.0.0a4 (2026-10-05)
 
 

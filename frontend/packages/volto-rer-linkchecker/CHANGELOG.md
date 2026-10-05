@@ -8,6 +8,12 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.5 (2026-10-05)
+
+### Feature
+
+- Reach the broken links report from the user menu of the toolbar instead of the site control panel, where the "Broken links" entry is gone. The link is shown only to the users the backend lists the `rer-linkchecker` user action for, and its label is that action's title, so it reads in the site's language. The back button of the report now leads to the site home rather than to the control panel, which an editor allowed to see the report may not be allowed into. 
+
 ## 1.0.0-alpha.4 (2026-10-05)
 
 ### Feature

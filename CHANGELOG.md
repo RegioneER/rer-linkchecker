@@ -7,6 +7,32 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a5 (2026-10-05)
+
+### Backend
+
+
+#### New features:
+
+- Give the csv report (`@linkchecker-csv`, and the file the `check_broken_links` script writes) the columns and labels of the panel: site content, link to check, link type, outcome, outcome description, translated in the language of the request like the descriptions already were. A new column tells the action to take on each link: to fix, to update or to check. The header names change accordingly: whoever reads the csv by column name (`PAGE`, `STATUS`, ...) has to follow. 
+
+
+
+### Frontend
+
+#### Feature
+
+- Reach the broken links report from the user menu of the toolbar instead of the site control panel, where the "Broken links" entry is gone. The link is shown only to the users the backend lists the `rer-linkchecker` user action for, and its label is that action's title, so it reads in the site's language. The back button of the report now leads to the site home rather than to the control panel, which an editor allowed to see the report may not be allowed into. 
+
+
+
+### Project
+
+No significant changes.
+
+
+
+
 ## 1.0.0a4 (2026-10-05)
 
 ### Backend
