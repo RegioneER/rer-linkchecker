@@ -199,7 +199,7 @@ msgstr "Aggiorna"
 #. Default: "shows reachable links that point to HTTP instead of HTTPS. Edit the url, replacing http with HTTPS."
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "shows reachable links that point to HTTP instead of HTTPS. Edit the url, replacing http with HTTPS"
-msgstr "mostra link raggiungibili che puntano ad HTTP invece che a HTTPS. Devi modificare l'url sostituendo HTTPS ad http."
+msgstr "mostra link raggiungibili che puntano ad HTTP invece che a HTTPS. Devi modificare l'url sostituendo HTTPS ad HTTP."
 
 #. Default: "shows the links that lead to resources that are not available (broken links). Fix them by removing or replacing them."
 #: components/LinkcheckerReport/LinkcheckerReport
