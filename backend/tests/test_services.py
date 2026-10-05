@@ -209,6 +209,29 @@ class TestCsvService:
         assert "Risorsa non trovata" in body
         assert "Not Found" not in body
 
+    def test_csv_labels_follow_the_request_language(
+        self, italian, report, manager_request
+    ):
+        """The same words as the panel: the downloaded columns are the ones
+        seen on the page."""
+        body = manager_request.get(
+            "/@linkchecker-csv", headers={"Accept-Language": "it"}
+        ).text
+        header, *rows = list(csv.reader(StringIO(body)))
+        assert header == [
+            "Contenuto del sito",
+            "Link da controllare",
+            "Tipo di link",
+            "Esito",
+            "Descrizione esito",
+            "Azioni sui link",
+        ]
+        by_link = {row[1]: row for row in rows}
+        assert by_link["https://example.com/gone"][2] == "Esterno"
+        assert by_link["https://example.com/gone"][5] == "Correggi"
+        assert by_link["/resolveuid/deadbeef"][2] == "Interno"
+        assert by_link["https://linkedin.com/x"][5] == "Verifica"
+
     def test_never_checked_has_a_filename_without_a_date(
         self, functional_portal, manager_request
     ):

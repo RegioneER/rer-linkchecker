@@ -23,8 +23,9 @@ Targets the site with id ``PLONE_SITE_ID`` (default ``Plone``); use
 
 The result is stored in the site and read back from there, by the
 ``@linkchecker`` / ``@linkchecker-csv`` endpoints: this script only refreshes
-it. Pass ``--output-dir`` to also dump the run as a csv (PAGE, LINK, TYPE,
-STATUS, DESCRIPTION) in <output-dir>/<siteid>_broken_links_<YYYYMMDD-HHMMSS>.csv,
+it. Pass ``--output-dir`` to also dump the run as a csv (the columns of
+``tool.get_rows()``, with their english labels: there is no request to pick a
+language from) in <output-dir>/<siteid>_broken_links_<YYYYMMDD-HHMMSS>.csv,
 whose timestamp keeps each run's file distinct: useful to keep an archive of
 past runs, which the site only ever holds for the last one.
 """

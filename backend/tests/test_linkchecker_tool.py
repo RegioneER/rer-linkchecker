@@ -237,6 +237,36 @@ class TestLinkCheckerTool:
         # report can tell "not verifiable" apart from "broken"
         assert "Blocked by bot protection" in items[2]["status_description"]
 
+    def test_get_rows_speaks_the_words_of_the_panel(self, linkchecker_content):
+        tool = linkchecker_content["tool"]
+        document = linkchecker_content["document"]
+        tool._outgoing_links.clear()
+        tool._outgoing_links[document.UID()] = (
+            datetime.now(),
+            [
+                ("https://example.com/gone", 404),
+                ("http://example.com/old", STATUS_HTTPS_ONLY),
+                ("/resolveuid/deadbeef", 410),
+                ("https://linkedin.com/x", 999),
+            ],
+        )
+        header, *rows = tool.get_rows()
+        assert header == [
+            "Site content",
+            "Link to check",
+            "Link type",
+            "Outcome",
+            "Outcome description",
+            "Link actions",
+        ]
+        assert [(row[2], row[3], row[5]) for row in rows] == [
+            ("External", 404, "To fix"),
+            ("External", STATUS_HTTPS_ONLY, "To update"),
+            ("Internal", 410, "To fix"),
+            # nobody classified 999: it still lands in "check"
+            ("External", 999, "To check"),
+        ]
+
     def test_get_broken_links_skips_deleted_content(self, linkchecker_content):
         tool = linkchecker_content["tool"]
         tool._outgoing_links["gone-uid"] = (

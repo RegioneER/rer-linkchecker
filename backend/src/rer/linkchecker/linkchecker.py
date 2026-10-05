@@ -112,6 +112,37 @@ STATUS_BLOCKED = _(
     default="Blocked by bot protection (works for a human, not verifiable)",
 )
 
+# what an editor has to do about a link: the same split the panel filters by
+# (utils/outcomes.ts in the frontend), keep the two in step. "check" is a
+# remainder, not a list, so an outcome nobody classified still lands somewhere
+ACTION_FIX = "fix"
+ACTION_UPDATE = "update"
+ACTION_CHECK = "check"
+# gone: the link has to be removed or replaced
+FIX_STATUSES = {404, 410}
+# reachable over https, so only the url is out of date
+UPDATE_STATUSES = {STATUS_HTTPS_ONLY}
+
+# the csv speaks the words of the panel, so whoever downloads what they are
+# looking at finds the same columns and labels
+CSV_HEADER = [
+    _("column_page", default="Site content"),
+    _("column_link", default="Link to check"),
+    _("column_link_type", default="Link type"),
+    _("column_status", default="Outcome"),
+    _("column_status_description", default="Outcome description"),
+    _("column_action", default="Link actions"),
+]
+LINK_TYPE_LABELS = {
+    "INTERNAL": _("link_type_internal", default="Internal"),
+    "EXTERNAL": _("link_type_external", default="External"),
+}
+ACTION_LABELS = {
+    ACTION_FIX: _("action_fix", default="To fix"),
+    ACTION_UPDATE: _("action_update", default="To update"),
+    ACTION_CHECK: _("action_check", default="To check"),
+}
+
 
 def format_duration(seconds):
     """A duration in seconds, spelled out for a human reading a log.
@@ -353,6 +384,16 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         cannot be verified automatically (e.g. LinkedIn 999, 403, 429)."""
         return status in BLOCKED_STATUSES
 
+    @staticmethod
+    def _action(status):
+        """What an editor has to do about a link with this status (one of the
+        ACTION_* constants)."""
+        if status in FIX_STATUSES:
+            return ACTION_FIX
+        if status in UPDATE_STATUSES:
+            return ACTION_UPDATE
+        return ACTION_CHECK
+
     @classmethod
     def _status_description(cls, status, request=None):
         """Human readable description of a link status
@@ -454,6 +495,12 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
     def get_rows(self, status=None, link_type=None, request=None):
         """The report as csv rows, header included.
 
+        :param request: translate the header, the labels and the descriptions
+            in its language; without one they are the english defaults
+
+        The status stays a bare number next to its description, so a
+        spreadsheet can sort and filter on it.
+
         example usage:
 
             tool = api.portal.get_tool("portal_linkchecker")
@@ -461,7 +508,17 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
             for row in tool.get_rows():
                 writer.writerow(row)
         """
-        yield ["PAGE", "LINK", "TYPE", "STATUS", "DESCRIPTION"]
+        yield [translate(column, context=request) for column in CSV_HEADER]
+        # once per report rather than once per row: every translate negotiates
+        # the language again
+        link_types = {
+            key: translate(label, context=request)
+            for key, label in LINK_TYPE_LABELS.items()
+        }
+        actions = {
+            key: translate(label, context=request)
+            for key, label in ACTION_LABELS.items()
+        }
         items = self.filter_links(
             self.get_broken_links(request=request), status=status, link_type=link_type
         )
@@ -469,9 +526,10 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
             yield [
                 item["@id"],
                 item["link"],
-                item["link_type"],
+                link_types[item["link_type"]],
                 item["status"],
                 item["status_description"],
+                actions[self._action(item["status"])],
             ]
 
     def _find_links(self, item):

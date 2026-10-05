@@ -4,7 +4,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-10-01 10:22+0000\n"
+"POT-Creation-Date: 2026-10-05 13:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,6 +21,10 @@ msgstr ""
 msgid "An addon that check all links in site contents and generate a report with broken ones"
 msgstr ""
 
+#: rer-linkchecker/backend/src/rer/linkchecker/profiles/default/actions.xml
+msgid "Check links"
+msgstr ""
+
 #: rer-linkchecker/backend/src/rer/linkchecker/profiles.zcml:13
 msgid "RER: Link checker: Install"
 msgstr ""
@@ -31,6 +35,61 @@ msgstr ""
 
 #: rer-linkchecker/backend/src/rer/linkchecker/profiles.zcml:21
 msgid "Uninstall RER: Link checker setup."
+msgstr ""
+
+#. Default: "To check"
+#: rer-linkchecker/backend/src/rer/linkchecker/linkchecker.py:143
+msgid "action_check"
+msgstr ""
+
+#. Default: "To fix"
+#: rer-linkchecker/backend/src/rer/linkchecker/linkchecker.py:141
+msgid "action_fix"
+msgstr ""
+
+#. Default: "To update"
+#: rer-linkchecker/backend/src/rer/linkchecker/linkchecker.py:142
+msgid "action_update"
+msgstr ""
+
+#. Default: "Link actions"
+#: rer-linkchecker/backend/src/rer/linkchecker/linkchecker.py:134
+msgid "column_action"
+msgstr ""
+
+#. Default: "Link to check"
+#: rer-linkchecker/backend/src/rer/linkchecker/linkchecker.py:130
+msgid "column_link"
+msgstr ""
+
+#. Default: "Link type"
+#: rer-linkchecker/backend/src/rer/linkchecker/linkchecker.py:131
+msgid "column_link_type"
+msgstr ""
+
+#. Default: "Site content"
+#: rer-linkchecker/backend/src/rer/linkchecker/linkchecker.py:129
+msgid "column_page"
+msgstr ""
+
+#. Default: "Outcome"
+#: rer-linkchecker/backend/src/rer/linkchecker/linkchecker.py:132
+msgid "column_status"
+msgstr ""
+
+#. Default: "Outcome description"
+#: rer-linkchecker/backend/src/rer/linkchecker/linkchecker.py:133
+msgid "column_status_description"
+msgstr ""
+
+#. Default: "External"
+#: rer-linkchecker/backend/src/rer/linkchecker/linkchecker.py:138
+msgid "link_type_external"
+msgstr ""
+
+#. Default: "Internal"
+#: rer-linkchecker/backend/src/rer/linkchecker/linkchecker.py:137
+msgid "link_type_internal"
 msgstr ""
 
 #. Default: "Bad request"
