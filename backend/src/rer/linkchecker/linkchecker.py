@@ -449,6 +449,10 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         names (@id, @type, title, UID), so a client can treat it as any other
         content reference. The link's own fields are named apart from those:
         link_type, not type, and status_description, not description.
+
+        action (one of the ACTION_* constants) says what an editor has to do
+        about the link, so a client never has to repeat the status -> action
+        mapping, nor its "everything else is check" remainder.
         """
         for uid, (last_update, links) in self._outgoing_links.items():
             broken = [item for item in links if not self._is_ok(item[1])]
@@ -473,6 +477,7 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
                     "status_description": self._status_description(
                         status, request=request
                     ),
+                    "action": self._action(status),
                     "last_update": last_update,
                 }
 
@@ -529,7 +534,7 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
                 link_types[item["link_type"]],
                 item["status"],
                 item["status_description"],
-                actions[self._action(item["status"])],
+                actions[item["action"]],
             ]
 
     def _find_links(self, item):

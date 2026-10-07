@@ -230,12 +230,15 @@ class TestLinkCheckerTool:
         assert gone["link_type"] == "EXTERNAL"
         assert gone["status"] == 404
         assert gone["status_description"] == "Not Found"
+        assert gone["action"] == "fix"
         assert gone["last_update"] == now
         assert items[1]["link_type"] == "INTERNAL"
         # bot-protected links are part of this view, unlike
         # get_page_with_broken_links: they carry their own description so a
         # report can tell "not verifiable" apart from "broken"
         assert "Blocked by bot protection" in items[2]["status_description"]
+        # nobody classified 999: it falls in the remainder
+        assert items[2]["action"] == "check"
 
     def test_get_rows_speaks_the_words_of_the_panel(self, linkchecker_content):
         tool = linkchecker_content["tool"]

@@ -29,7 +29,7 @@ msgstr "Verifica bloccata per troppe richieste"
 #. Default: "Check method not allowed"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Check method not allowed"
-msgstr "Metodo di verifica non consentito"
+msgstr "Richiesta non consentita"
 
 #. Default: "Connection error"
 #: components/LinkcheckerReport/LinkcheckerReport
@@ -119,7 +119,7 @@ msgstr "Esito"
 #. Default: "Request blocked"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Request blocked"
-msgstr "Richiesta bloccata"
+msgstr "Accesso negato"
 
 #. Default: "Resource not found"
 #: components/LinkcheckerReport/LinkcheckerReport

@@ -59,15 +59,20 @@
 }
 
 .controlpanel-linkchecker .linkchecker-col-page {
-  width: 32%;
+  width: 28%;
 }
 
 .controlpanel-linkchecker .linkchecker-col-link {
-  width: 48%;
+  width: 40%;
 }
 
 .controlpanel-linkchecker .linkchecker-col-status {
   width: 20%;
+}
+
+/* one short word ("Correggi", "Verifica"): enough to fit it on one line */
+.controlpanel-linkchecker .linkchecker-col-action {
+  width: 12%;
 }
 
 /* a url has no spaces to break at, so it breaks anywhere rather than pushing
@@ -111,7 +116,8 @@
 /* the theme breaks words inside every cell, cutting "Unauthorized" into
    "Unauthori/zed": here whole words. The link column keeps breaking
    anywhere, which is what a url needs. */
-.controlpanel-linkchecker .linkchecker-status {
+.controlpanel-linkchecker .linkchecker-status,
+.controlpanel-linkchecker .linkchecker-action {
   word-break: normal;
 }
 

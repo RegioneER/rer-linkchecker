@@ -80,8 +80,8 @@ const messages = defineMessages({
     id: 'No broken links match the current filters',
     defaultMessage: 'No broken links match the current filters',
   },
-  // The intro quotes this very message, so a rename carries over to the text
-  // that points at the field.
+  // The intro quotes this very message, and the table heads its action column
+  // with it, so a rename carries over to everything that points at the field.
   actionFilter: {
     id: 'Link actions',
     defaultMessage: 'Link actions',
@@ -554,10 +554,12 @@ const LinkcheckerReport = (props) => {
                   <Header as="h2">
                     <FormattedMessage {...messages.results} /> ({itemsTotal})
                   </Header>
-                  {/* Three columns, not five: the type belongs to the link and
-                      the description to the code. Each cell names its column in
-                      `data-label`, which is what the stacked layout shows on a
-                      phone, where the header cannot follow the values. */}
+                  {/* Four columns, not six: the type belongs to the link and
+                      the description to the code. The action is a column of its
+                      own, because the whole report, unfiltered, mixes all three.
+                      Each cell names its column in `data-label`, which is what
+                      the stacked layout shows on a phone, where the header
+                      cannot follow the values. */}
                   <Table celled striped className="linkchecker-table">
                     <Table.Header>
                       <Table.Row>
@@ -569,6 +571,9 @@ const LinkcheckerReport = (props) => {
                         </Table.HeaderCell>
                         <Table.HeaderCell className="linkchecker-col-status">
                           <FormattedMessage {...messages.columnStatus} />
+                        </Table.HeaderCell>
+                        <Table.HeaderCell className="linkchecker-col-action">
+                          <FormattedMessage {...messages.actionFilter} />
                         </Table.HeaderCell>
                       </Table.Row>
                     </Table.Header>
@@ -632,6 +637,20 @@ const LinkcheckerReport = (props) => {
                                     cell overflows */}
                                   {` – ${outcome}`}
                                 </span>
+                              )}
+                            </Table.Cell>
+                            <Table.Cell
+                              className="linkchecker-action"
+                              data-label={intl.formatMessage(
+                                messages.actionFilter,
+                              )}
+                            >
+                              {/* the backend decides: an unclassified outcome
+                                  comes already filed under "check" */}
+                              {actionLabels[item.action] && (
+                                <FormattedMessage
+                                  {...actionLabels[item.action]}
+                                />
                               )}
                             </Table.Cell>
                           </Table.Row>

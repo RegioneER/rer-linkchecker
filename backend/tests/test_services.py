@@ -79,6 +79,8 @@ class TestReportService:
         assert item["link_type"] == "EXTERNAL"
         assert item["status"] == 404
         assert item["status_description"] == "Not Found"
+        # the panel shows what to do on every row, filtered or not
+        assert item["action"] == "fix"
         assert item["last_update"] == LAST_UPDATE.isoformat()
         # internal links are told apart, they are fixed in a different way
         internal = [item for item in items if item["link_type"] == "INTERNAL"]

@@ -132,9 +132,13 @@ can treat it as any other content reference, and names the link's own fields apa
   "link_type": "EXTERNAL",
   "status": 404,
   "status_description": "Not Found",
+  "action": "fix",
   "last_update": "2026-07-30T03:00:12"
 }
 ```
+
+`action` is what an editor has to do about the link: `fix` for `404` and `410` (the resource
+is gone), `update` for `-2` (the url only needs `https`), `check` for any other outcome.
 
 `@linkchecker-csv` returns the exact same csv the console script writes (same columns, same
 quoting), names the file after the date of the *data* rather than of the download, and repeats

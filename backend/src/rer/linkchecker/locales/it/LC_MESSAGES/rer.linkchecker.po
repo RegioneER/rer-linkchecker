@@ -102,7 +102,7 @@ msgstr "Accesso non autorizzato"
 #. Default: "Request blocked (forbidden)"
 #: rer/linkchecker/linkchecker.py:87
 msgid "status_403"
-msgstr "Richiesta bloccata"
+msgstr "Accesso negato"
 
 #. Default: "Not Found"
 #: rer/linkchecker/linkchecker.py:88
@@ -112,7 +112,7 @@ msgstr "Risorsa non trovata"
 #. Default: "Check method not allowed"
 #: rer/linkchecker/linkchecker.py:89
 msgid "status_405"
-msgstr "Metodo di verifica non consentito"
+msgstr "Richiesta non consentita"
 
 #. Default: "Gone"
 #: rer/linkchecker/linkchecker.py:90
