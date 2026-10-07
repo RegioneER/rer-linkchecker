@@ -9,6 +9,13 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0a8 (2026-10-07)
+
+
+### New features:
+
+- Each item of `@linkchecker` carries the `action` an editor has to take on the link: `fix` (404, 410), `update` (-2) or `check` (any other outcome), so a client no longer has to repeat the mapping. 
+
 ## 1.0.0a7 (2026-10-05)
 
 No significant changes.

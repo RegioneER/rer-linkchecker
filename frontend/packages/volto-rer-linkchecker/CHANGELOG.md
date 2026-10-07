@@ -8,6 +8,12 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.8 (2026-10-07)
+
+### Feature
+
+- Show the action to take on each link in a column of the report table, next to the outcome: the unfiltered report mixes links to fix, to update and to check, and the csv already had that column. 
+
 ## 1.0.0-alpha.7 (2026-10-05)
 
 ## 1.0.0-alpha.6 (2026-10-05)
