@@ -4,7 +4,7 @@
 [![Black code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![CI](https://github.com/RegioneER/rer-linkchecker/actions/workflows/main.yml/badge.svg)](https://github.com/RegioneER/rer-linkchecker/actions/workflows/main.yml)
 
-An addon that check all links in site contents and generate a report with broken ones
+An add-on that checks all the links in the site contents and generates a report of the broken ones.
 
 ## Quick Start 🏁
 
@@ -13,7 +13,7 @@ An addon that check all links in site contents and generate a report with broken
 -   An [operating system](https://6.docs.plone.org/install/create-project-cookieplone.html#prerequisites-for-installation) that runs all the requirements mentioned.
 -   [uv](https://6.docs.plone.org/install/create-project-cookieplone.html#uv)
 -   [nvm](https://6.docs.plone.org/install/create-project-cookieplone.html#nvm)
--   [Node.js and pnpm](https://6.docs.plone.org/install/create-project.html#node-js) 24
+-   [Node.js and pnpm](https://6.docs.plone.org/install/create-project.html#node-js) 22 or 24
 -   [Make](https://6.docs.plone.org/install/create-project-cookieplone.html#make)
 -   [Git](https://6.docs.plone.org/install/create-project-cookieplone.html#git)
 -   [Docker](https://docs.docker.com/get-started/get-docker/) (optional)
@@ -37,14 +37,13 @@ An addon that check all links in site contents and generate a report with broken
 
 ### Fire Up the Servers 🔥
 
-
-2.  Start the backend at http://localhost:8080/.
+1.  Start the backend at http://localhost:8080/.
 
     ```shell
     make backend-start
     ```
 
-3.  In a new shell session, start the frontend at http://localhost:3000/.
+2.  In a new shell session, start the frontend at http://localhost:3000/.
 
     ```shell
     make frontend-start
@@ -57,7 +56,7 @@ Voila! Your Plone site should be live and kicking! 🎉
 Deploy a local Docker Compose environment that includes the following.
 
 - Docker images for Backend and Frontend 🖼️
-- A stack with a Traefik router and a PostgreSQL database 🗃️
+- A stack with a Traefik router and a ZEO server for the database 🗃️
 - Accessible at [http://rer-linkchecker.localhost](http://rer-linkchecker.localhost) 🌐
 
 Run the following commands in a shell session.
@@ -73,9 +72,10 @@ And... you're all set! Your Plone site is up and running locally! 🚀
 This monorepo consists of the following distinct sections:
 
 - **backend**: the Plone add-on `rer.linkchecker` (API + Plone installation via `uv`, not buildout). See [backend/README.md](backend/README.md) for the tool's features, its API, and the `check_broken_links` console script.
-- **frontend**: the Volto add-on `volto-rer-linkchecker`. See [frontend/README.md](frontend/README.md).
-- **devops**: Docker stack, Ansible playbooks, and cache settings.
+- **frontend**: the Volto add-on `@regioneer/volto-rer-linkchecker`. See [frontend/README.md](frontend/README.md).
 - **docs**: Scaffold for writing documentation for your project.
+
+The local Docker stack is defined in [`docker-compose.yml`](docker-compose.yml), at the root.
 
 ## Code quality assurance 🧐
 
@@ -97,16 +97,17 @@ make format
 | --- | --- | --- | --- |
 | backend | Ruff | Python code formatting, imports sorting  | [`backend/pyproject.toml`](./backend/pyproject.toml) |
 | backend | `zpretty` | XML and ZCML formatting  | -- |
-| frontend | ESLint | Fixes most common frontend issues | [`frontend/.eslintrc.js`](.frontend/.eslintrc.js) |
-| frontend | prettier | Format JS and Typescript code  | [`frontend/.prettierrc`](.frontend/.prettierrc) |
-| frontend | Stylelint | Format Styles (css, less, sass)  | [`frontend/.stylelintrc`](.frontend/.stylelintrc) |
+| frontend | ESLint | Fixes most common frontend issues | [`frontend/.eslintrc.js`](./frontend/.eslintrc.js) |
+| frontend | prettier | Format JS and Typescript code  | [`frontend/.prettierrc`](./frontend/.prettierrc) |
+| frontend | Stylelint | Format Styles (css, less, sass)  | [`frontend/.stylelintrc`](./frontend/.stylelintrc) |
 
 Formatters can also be run within the `backend` or `frontend` folders.
 
 ### Linting the codebase
-or `lint`:
 
- ```shell
+To check the code base without rewriting it, run the following shell command.
+
+```shell
 make lint
 ```
 
@@ -116,9 +117,9 @@ make lint
 | backend | Pyroma | Checks Python package metadata  | -- |
 | backend | check-python-versions | Checks Python version information  | -- |
 | backend | `zpretty` | Checks XML and ZCML formatting  | -- |
-| frontend | ESLint | Checks JS / Typescript lint | [`frontend/.eslintrc.js`](.frontend/.eslintrc.js) |
-| frontend | prettier | Check JS / Typescript formatting  | [`frontend/.prettierrc`](.frontend/.prettierrc) |
-| frontend | Stylelint | Check Styles (css, less, sass) formatting  | [`frontend/.stylelintrc`](.frontend/.stylelintrc) |
+| frontend | ESLint | Checks JS / Typescript lint | [`frontend/.eslintrc.js`](./frontend/.eslintrc.js) |
+| frontend | prettier | Check JS / Typescript formatting  | [`frontend/.prettierrc`](./frontend/.prettierrc) |
+| frontend | Stylelint | Check Styles (css, less, sass) formatting  | [`frontend/.stylelintrc`](./frontend/.stylelintrc) |
 
 Linters can be run individually within the `backend` or `frontend` folders.
 

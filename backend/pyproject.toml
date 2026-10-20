@@ -1,7 +1,7 @@
 [project]
 name = "rer.linkchecker"
 dynamic = ["version"]
-description = "An addon that check all links in site contents and generate a report with broken ones"
+description = "A Plone add-on that checks all the links in the site contents and generates a report of the broken ones"
 readme = "README.md"
 license = { text = "GPL-2.0-only" }
 requires-python = ">=3.11,<3.14"

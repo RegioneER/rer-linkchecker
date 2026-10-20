@@ -1,7 +1,7 @@
 {
   "name": "volto-rer-linkchecker-dev",
   "version": "1.0.0-alpha.0",
-  "description": "An addon that check all links in site contents and generate a report with broken ones",
+  "description": "Volto add-on that shows editors a report of the broken and outdated links found in the site contents",
   "author": "RedTurtle Technology",
   "homepage": "https://github.com/RegioneER/rer-linkchecker",
   "license": "MIT",

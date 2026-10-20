@@ -1,7 +1,7 @@
 {
   "name": "@regioneer/volto-rer-linkchecker",
   "version": "1.0.0-alpha.8",
-  "description": "An addon that check all links in site contents and generate a report with broken ones",
+  "description": "Volto add-on that shows editors a report of the broken and outdated links found in the site contents",
   "main": "src/index.ts",
   "license": "MIT",
   "keywords": [

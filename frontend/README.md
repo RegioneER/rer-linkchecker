@@ -18,7 +18,7 @@ The links are checked by the Plone add-on [`rer.linkchecker`](https://github.com
   - **To update**: the link works but uses `http` instead of `https`. Edit the URL.
   - **To check**: the link could not be verified automatically (timeouts, connection errors, bot protection, server errors...). Check it by hand.
 - **Filters** by action (each option shows how many links it contains) and by link type (internal or external).
-- For each link, the report shows the content that contains it, the link itself and a human-readable description of the outcome (for example "Resource not found" or "Invalid security certificate").
+- For each link, the report shows the content that contains it, the link itself, a human-readable description of the outcome (for example "Resource not found" or "Invalid security certificate") and the action to take, shown on every row even when the report is not filtered.
 - **Pagination**, with page sizes of the site default, 50 or 100 items.
 - **CSV export** of the report, with the filters currently applied.
 - The date and time of the last check, and distinct messages when no check has run yet or when no broken links were found.
