@@ -1,195 +1,121 @@
 # RER: Link checker (@regioneer/volto-rer-linkchecker)
 
-An addon that check all links in site contents and generate a report with broken ones
+Volto add-on that shows editors a report of the broken and outdated links found in the site contents, so they can fix them.
 
-[![npm](https://img.shields.io/npm/v/volto-rer-linkchecker)](https://www.npmjs.com/package/volto-rer-linkchecker)
-[![](https://img.shields.io/badge/-Storybook-ff4785?logo=Storybook&logoColor=white&style=flat-square)](https://RegioneER.github.io/volto-rer-linkchecker/)
+[![npm](https://img.shields.io/npm/v/@regioneer/volto-rer-linkchecker)](https://www.npmjs.com/package/@regioneer/volto-rer-linkchecker)
 [![CI](https://github.com/RegioneER/rer-linkchecker/actions/workflows/main.yml/badge.svg)](https://github.com/RegioneER/rer-linkchecker/actions/workflows/main.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 
+This is the frontend part of [rer-linkchecker](https://github.com/RegioneER/rer-linkchecker).
+The links are checked by the Plone add-on [`rer.linkchecker`](https://github.com/RegioneER/rer-linkchecker/tree/main/backend), which must be installed on the backend: this package only displays its results.
 
 ## Features
 
-<!-- List your awesome features here -->
+- A **"Site link check" page** at `/controlpanel/linkchecker`, with the links found by the last check, internal and external.
+- A **"Check links" entry in the user menu** of the Volto toolbar, shown only to the users allowed to see the report.
+- Each link is grouped by the **action the editor has to take**:
+  - **To fix**: the link leads to a resource that is not available (`404`, `410`). Remove or replace it.
+  - **To update**: the link works but uses `http` instead of `https`. Edit the URL.
+  - **To check**: the link could not be verified automatically (timeouts, connection errors, bot protection, server errors...). Check it by hand.
+- **Filters** by action (each option shows how many links it contains) and by link type (internal or external).
+- For each link, the report shows the content that contains it, the link itself and a human-readable description of the outcome (for example "Resource not found" or "Invalid security certificate").
+- **Pagination**, with page sizes of the site default, 50 or 100 items.
+- **CSV export** of the report, with the filters currently applied.
+- The date and time of the last check, and distinct messages when no check has run yet or when no broken links were found.
+
+## Requirements
+
+| Component | Version |
+| --- | --- |
+| Volto | 19 (developed and tested on 19.3) |
+| React | 18 |
+| Node.js | 22 or 24 |
+| Plone backend | 6.1 or 6.2, with [`rer.linkchecker`](https://github.com/RegioneER/rer-linkchecker/tree/main/backend) installed |
 
 ## Installation
 
-To install your project, you must choose the method appropriate to your version of Volto.
+### 1. Backend
 
+Install the `rer.linkchecker` Python package in your Plone backend and activate it in the add-ons control panel (or import the `rer.linkchecker:default` profile).
 
-### Volto 18 and later
+The check itself does not run from the browser: it is launched by the `check_broken_links` console script, usually scheduled once a day with cron.
+See the [backend documentation](https://github.com/RegioneER/rer-linkchecker/tree/main/backend#readme) for the script options and the REST API.
 
-Add `@regioneer/volto-rer-linkchecker` to your `package.json`.
+### 2. Frontend
 
-```json
-"dependencies": {
-    "@regioneer/volto-rer-linkchecker": "*"
-}
+Add the package to the dependencies of your Volto project:
+
+```shell
+pnpm add @regioneer/volto-rer-linkchecker
 ```
 
-Add `@regioneer/volto-rer-linkchecker` to your `volto.config.js`.
+Then add it to the add-ons in your `volto.config.js`:
 
 ```javascript
 const addons = ['@regioneer/volto-rer-linkchecker'];
 ```
 
-If this package provides a Volto theme, and you want to activate it, then add the following to your `volto.config.js`.
+No further configuration is needed.
 
-```javascript
-const theme = '@regioneer/volto-rer-linkchecker';
-```
+## Usage
 
-### Volto 17 and earlier
+Log in with a user that has the `rer.linkchecker: View report` permission.
+By default it is granted to the **Manager**, **Site Administrator** and **Editor** roles.
 
-Create a new Volto project.
-You can skip this step if you already have one.
+Open the user menu in the Volto toolbar and choose **Check links**, or go directly to `/controlpanel/linkchecker`.
 
-```
-npm install -g yo @plone/generator-volto
-yo @plone/volto my-volto-project --addon @regioneer/volto-rer-linkchecker
-cd my-volto-project
-```
+The page shows the results of the last check run on the backend. To update them, run the check again on the backend: reloading the page is not enough.
 
-Add `@regioneer/volto-rer-linkchecker` to your `package.json`.
+## Configuration
 
-```JSON
-"addons": [
-    "@regioneer/volto-rer-linkchecker"
-],
+The add-on reads only the Volto setting `config.settings.defaultPageSize`, used as the default page size of the report.
 
-"dependencies": {
-    "@regioneer/volto-rer-linkchecker": "*"
-}
-```
+## Translations
 
-Download and install the new add-on.
+The interface is available in English and Italian.
 
-```
-yarn install
-```
+## Links
 
-Start Volto.
-
-```
-yarn start
-```
-
-## Test installation
-
-Visit http://localhost:3000/ in a browser, login, and check the awesome new features.
-
+- Source code: <https://github.com/RegioneER/rer-linkchecker>
+- Issue tracker: <https://github.com/RegioneER/rer-linkchecker/issues>
+- Backend add-on: [`rer.linkchecker`](https://github.com/RegioneER/rer-linkchecker/tree/main/backend)
+- Changelog: [CHANGELOG.md](https://github.com/RegioneER/rer-linkchecker/blob/main/frontend/packages/volto-rer-linkchecker/CHANGELOG.md)
 
 ## Development
 
-The development of this add-on is done in isolation using pnpm workspaces, the latest `mrs-developer`, and other Volto core improvements.
-For these reasons, it only works with pnpm and Volto 18.
+This add-on lives in the [rer-linkchecker](https://github.com/RegioneER/rer-linkchecker) monorepo, together with its backend.
+It is developed in isolation with pnpm workspaces and `mrs-developer`.
 
-
-### Prerequisites ✅
-
--   An [operating system](https://6.docs.plone.org/install/create-project-cookieplone.html#prerequisites-for-installation) that runs all the requirements mentioned.
--   [nvm](https://6.docs.plone.org/install/create-project-cookieplone.html#nvm)
--   [Node.js and pnpm](https://6.docs.plone.org/install/create-project.html#node-js) 24
--   [Make](https://6.docs.plone.org/install/create-project-cookieplone.html#make)
--   [Git](https://6.docs.plone.org/install/create-project-cookieplone.html#git)
--   [Docker](https://docs.docker.com/get-started/get-docker/) (optional)
-
-### Installation 🔧
-
-1.  Clone this repository, then change your working directory.
-
-    ```shell
-    git clone git@github.com:RegioneER/rer-linkchecker.git
-    cd rer-linkchecker/frontend
-    ```
-
-2.  Install this code base.
-
-    ```shell
-    make install
-    ```
-
-
-### Make convenience commands
-
-Run `make help` to list the available Make commands.
-
-
-### Set up development environment
-
-Install package requirements.
+Prerequisites: [nvm](https://6.docs.plone.org/install/create-project-cookieplone.html#nvm), [Node.js and pnpm](https://6.docs.plone.org/install/create-project.html#node-js), [Make](https://6.docs.plone.org/install/create-project-cookieplone.html#make), [Git](https://6.docs.plone.org/install/create-project-cookieplone.html#git) and, optionally, [Docker](https://docs.docker.com/get-started/get-docker/).
 
 ```shell
+git clone git@github.com:RegioneER/rer-linkchecker.git
+cd rer-linkchecker/frontend
 make install
 ```
 
-### Start developing
-
-Start the backend.
+Start the backend, then the frontend in a separate terminal:
 
 ```shell
 make backend-docker-start
-```
-
-In a separate terminal session, start the frontend.
-
-```shell
 make start
 ```
 
-### Lint code
+Other useful commands (run `make help` for the full list):
 
-Run ESlint, Prettier, and Stylelint in analyze mode.
+| Command | Description |
+| --- | --- |
+| `make lint` | Run ESLint, Prettier and Stylelint in check mode |
+| `make format` | Run ESLint, Prettier and Stylelint in fix mode |
+| `make i18n` | Extract the messages to translate into `locales` |
+| `make test` | Run the unit tests |
 
-```shell
-make lint
-```
+## Credits
 
-### Format code
+Developed with the support of [Regione Emilia-Romagna](https://www.regione.emilia-romagna.it/), which supports the [PloneGov initiative](https://www.plonegov.it/).
 
-Run ESlint, Prettier, and Stylelint in fix mode.
-
-```shell
-make format
-```
-
-### i18n
-
-Extract the i18n messages to locales.
-
-```shell
-make i18n
-```
-
-### Unit tests
-
-Run unit tests.
-
-```shell
-make test
-```
-
-### Run Cypress tests
-
-Run each of these steps in separate terminal sessions.
-
-In the first session, start the frontend in development mode.
-
-```shell
-make acceptance-frontend-dev-start
-```
-
-In the second session, start the backend acceptance server.
-
-```shell
-make acceptance-backend-start
-```
-
-In the third session, start the Cypress interactive test runner.
-
-```shell
-make acceptance-test
-```
+This product was developed by the [RedTurtle Technology](https://www.redturtle.it/) team.
 
 ## License
 
-The project is licensed under the MIT license.
+This package is licensed under the [MIT license](https://opensource.org/licenses/MIT).
