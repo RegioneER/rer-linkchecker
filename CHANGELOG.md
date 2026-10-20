@@ -7,6 +7,32 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0 (2026-10-20)
+
+### Backend
+
+No significant changes.
+
+
+
+
+### Frontend
+
+#### Documentation
+
+- Rewrite the README: what the add-on does, its requirements and how to install and use it. 
+
+
+
+### Project
+
+
+#### Feature
+
+- First official release. @cekk 
+
+
+
 ## 1.0.0a8 (2026-10-07)
 
 ### Backend

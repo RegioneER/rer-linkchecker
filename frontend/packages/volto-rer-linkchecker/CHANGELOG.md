@@ -8,6 +8,12 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0 (2026-10-20)
+
+### Documentation
+
+- Rewrite the README: what the add-on does, its requirements and how to install and use it. 
+
 ## 1.0.0-alpha.8 (2026-10-07)
 
 ### Feature
