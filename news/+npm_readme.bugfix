@@ -1,1 +1,0 @@
-Publish the frontend README to npm: the npm workflow now copies it into the package before publishing.
