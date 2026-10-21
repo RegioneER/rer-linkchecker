@@ -83,6 +83,10 @@ jobs:
           echo "Version $VERSION -> dist-tag $TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Copy the README into the package
+        working-directory: frontend/packages/volto-rer-linkchecker
+        run: cp ../../README.md .
+
       - name: Release to npm
         working-directory: frontend/packages/volto-rer-linkchecker
         run: pnpm publish --provenance --access public --no-git-checks --tag "${{ steps.npm-tag.outputs.tag }}"
