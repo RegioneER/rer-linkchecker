@@ -16,11 +16,6 @@ msgstr ""
 msgid "Access not authorized"
 msgstr "Accesso non autorizzato"
 
-#. Default: "Back to Control Panel"
-#: components/LinkcheckerReport/LinkcheckerReport
-msgid "Back to Control Panel"
-msgstr "Torna al pannello di controllo"
-
 #. Default: "Check blocked by too many requests"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Check blocked by too many requests"
@@ -36,6 +31,11 @@ msgstr "Richiesta non consentita"
 msgid "Connection error"
 msgstr "Errore di connessione"
 
+#. Default: "Domain not allowed in contents"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Domain not allowed in contents"
+msgstr "Dominio non ammesso nei contenuti"
+
 #. Default: "Download CSV"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Download CSV"
@@ -50,6 +50,11 @@ msgstr "Errore del server di destinazione"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "External"
 msgstr "Esterno"
+
+#. Default: "Home"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Home"
+msgstr "Home"
 
 #. Default: "In the {field} field you can filter the list by the action to take:"
 #: components/LinkcheckerReport/LinkcheckerReport

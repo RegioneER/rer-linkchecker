@@ -19,8 +19,9 @@ export type SummaryEntry = {
   count: number;
 };
 
-/** Gone: the link has to be removed or replaced. */
-const FIX_STATUSES = [404, 410];
+/** Gone, or never to be linked (-4: blacklisted domain): the link has to be
+ * removed or replaced. */
+const FIX_STATUSES = [404, 410, -4];
 
 /** Reachable over https, so only the url is out of date. */
 const UPDATE_STATUSES = [-2];

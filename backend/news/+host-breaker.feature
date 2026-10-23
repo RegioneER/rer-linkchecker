@@ -1,0 +1,1 @@
+Give up on a host after 3 consecutive timeouts or connection errors: its remaining links get the same outcome without being fetched, and are tried again at the next run. A single dead host with tens of links no longer keeps two workers busy for minutes. Tune it with `check_site(host_max_failures=...)` or `check_broken_links --host-max-failures`, `0` to never give up.

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-10-01T07:27:26.292Z\n"
+"POT-Creation-Date: 2026-10-23T20:47:03.731Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -16,11 +16,6 @@ msgstr ""
 #. Default: "Access not authorized"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Access not authorized"
-msgstr ""
-
-#. Default: "Back to Control Panel"
-#: components/LinkcheckerReport/LinkcheckerReport
-msgid "Back to Control Panel"
 msgstr ""
 
 #. Default: "Check blocked by too many requests"
@@ -38,6 +33,11 @@ msgstr ""
 msgid "Connection error"
 msgstr ""
 
+#. Default: "Domain not allowed in contents"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Domain not allowed in contents"
+msgstr ""
+
 #. Default: "Download CSV"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "Download CSV"
@@ -51,6 +51,11 @@ msgstr ""
 #. Default: "External"
 #: components/LinkcheckerReport/LinkcheckerReport
 msgid "External"
+msgstr ""
+
+#. Default: "Home"
+#: components/LinkcheckerReport/LinkcheckerReport
+msgid "Home"
 msgstr ""
 
 #. Default: "In the {field} field you can filter the list by the action to take:"
