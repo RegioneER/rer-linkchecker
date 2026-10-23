@@ -1,10 +1,12 @@
 from datetime import datetime
 from plone import api
+from rer.linkchecker.linkchecker import extract_links
 from rer.linkchecker.linkchecker import STATUS_CONNECTION_ERROR
 from rer.linkchecker.linkchecker import STATUS_HTTPS_ONLY
 from urllib3.exceptions import LocationParseError
 from uuid import uuid4
 
+import json
 import pytest
 import requests
 
@@ -119,6 +121,88 @@ def linkchecker_content(portal):
         "link_404": link_404,
         "tool": api.portal.get_tool("portal_linkchecker"),
     }
+
+
+class TestExtractLinks:
+    """Real-world cases from the ambiente and salute reports, where the
+    markup or the punctuation following a url ended up in the link."""
+
+    @pytest.mark.parametrize(
+        "text,expected",
+        [
+            # the url is also the text of its own link
+            (
+                '<a href="https://a.it">https://a.it</a></span></p>',
+                {"https://a.it"},
+            ),
+            # end of a sentence, also when the url is a bare host
+            ("vedi http://federazione.lepida.it.", {"http://federazione.lepida.it"}),
+            ("vedi https://a.it/x/y.", {"https://a.it/x/y"}),
+            (
+                "https://a.it, https://b.it; https://c.it!",
+                {
+                    "https://a.it",
+                    "https://b.it",
+                    "https://c.it",
+                },
+            ),
+            ("'https://a.it/x'", {"https://a.it/x"}),
+            # an unbalanced parenthesis belongs to the text...
+            ("(vedi https://a.it/x)", {"https://a.it/x"}),
+            ("(http://www.agenziafarmaco.it/),", {"http://www.agenziafarmaco.it/"}),
+            ("(https://a.it/screening/cervice).", {"https://a.it/screening/cervice"}),
+            # ...a balanced one to the url
+            (
+                "https://it.wikipedia.org/wiki/Foo_(bar)",
+                {"https://it.wikipedia.org/wiki/Foo_(bar)"},
+            ),
+            (
+                "(https://it.wikipedia.org/wiki/Foo_(bar))",
+                {"https://it.wikipedia.org/wiki/Foo_(bar)"},
+            ),
+            # query strings, fragments and apostrophes inside a url are kept
+            (
+                "https://a.it/x?a=1&b=2;c=3#top",
+                {"https://a.it/x?a=1&b=2;c=3#top"},
+            ),
+            (
+                "https://it.wikipedia.org/wiki/Valle_d'Aosta",
+                {"https://it.wikipedia.org/wiki/Valle_d'Aosta"},
+            ),
+            ("https://a.it:8080/x", {"https://a.it:8080/x"}),
+            # resolveuid paths are untouched
+            ("/resolveuid/abc-123.", {"resolveuid/abc-123"}),
+        ],
+    )
+    def test_extract_links(self, text, expected):
+        assert extract_links(text) == expected
+
+    def test_blocks_serialized_as_json(self):
+        """_find_links dumps the blocks to json: the escaped quotes of the
+        html inside them still end the url, as they always did."""
+        text = json.dumps({
+            "value": '<a href="https://a.it/x">https://a.it/x</a>.',
+            "url": "https://b.it/y?z=1",
+        })
+        assert extract_links(text) == {"https://a.it/x", "https://b.it/y?z=1"}
+
+    def test_find_links_on_content(self, linkchecker_content):
+        document = linkchecker_content["document"]
+        document.blocks = {
+            "abc": {
+                "@type": "html",
+                "html": (
+                    '<p><span><a href="https://www.gruppolen.it">'
+                    "https://www.gruppolen.it</a></span></p>"
+                    "<p>Vedi http://federazione.lepida.it.</p>"
+                ),
+            }
+        }
+        links = linkchecker_content["tool"]._find_links(document)
+        assert sorted(links) == [
+            "http://federazione.lepida.it",
+            "https://www.gruppolen.it",
+        ]
 
 
 class TestLinkCheckerTool:

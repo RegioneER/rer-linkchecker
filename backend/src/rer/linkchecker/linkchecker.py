@@ -11,9 +11,9 @@ from plone.dexterity.utils import iterSchemata
 from plone.restapi.serializer.utils import RESOLVEUID_RE
 from Products.CMFCore.utils import UniqueObject
 from requests.adapters import HTTPAdapter
+from rer.linkchecker import _
 from urllib.parse import urlparse
 from urllib3.exceptions import InsecureRequestWarning
-from rer.linkchecker import _
 from zExceptions import NotFound
 from zope.i18n import translate
 from zope.interface import implementer
@@ -49,10 +49,39 @@ class ILinkCheckerTool(Interface):
         """Check the content for links"""
 
 
+# the path stops at < and > too: a url that is also the text of its own link
+# (<a href="https://a.it">https://a.it</a>) is followed by the closing tag
+# with no space in between. Not at ', which real urls do contain (Italian
+# Wikipedia titles, text fragments like "all'ambulatorio").
 URL_REGEX = re.compile(
-    r"((?:(?:https?://)(?:(?:www\.)?(?:[\da-z\.-]+)\.(?:[a-z]{2,6}))(?::[0-9]{1,4})?)(?:[^\"\s\\]*)?)"
+    r"((?:(?:https?://)(?:(?:www\.)?(?:[\da-z\.-]+)\.(?:[a-z]{2,6}))(?::[0-9]{1,4})?)(?:[^\"\s\\<>]*)?)"
 )
 RESOLVEUID_REGEX = re.compile(r"(resolve[Uu]id/[a-zA-Z0-9\-]+)")
+# what running text puts right after a url ("see https://a.it.", "(https://a.it),"):
+# never the last character of a real url, so it is stripped off the matches
+TRAILING_PUNCTUATION = ".,;:!?'"
+
+
+def _strip_trailing_punctuation(url):
+    """Strip the punctuation of the surrounding text off the end of a url.
+
+    A closing parenthesis goes only when unbalanced: "(see https://a.it)"
+    loses it, https://it.wikipedia.org/wiki/Foo_(bar) keeps it.
+    """
+    while url and (
+        url[-1] in TRAILING_PUNCTUATION
+        or (url[-1] == ")" and url.count(")") > url.count("("))
+    ):
+        url = url[:-1]
+    return url
+
+
+def extract_links(text):
+    """The links (absolute urls and resolveuid paths) found in a text"""
+    links = {_strip_trailing_punctuation(url) for url in URL_REGEX.findall(text)}
+    links.update(RESOLVEUID_REGEX.findall(text))
+    return links
+
 
 DEFAULT_TTL = 3600 * 6
 # generous timeout: some (slow) PA servers answer in ~4-6s even unloaded, and
@@ -567,8 +596,7 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
                         continue
                 else:
                     continue
-                links.update(re.findall(URL_REGEX, text))
-                links.update(re.findall(RESOLVEUID_REGEX, text))
+                links.update(extract_links(text))
         return list(links)
 
     def _is_internal(self, link):

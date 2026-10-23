@@ -1,0 +1,1 @@
+Stop extracting the markup or the punctuation that follows a url as part of the link: a url that is also the text of its own link (`https://a.it</a></span></p>`) or that ends a sentence (`https://a.it.`, `(https://a.it),`) was checked as written and reported as broken.
