@@ -2,6 +2,7 @@ from datetime import datetime
 from plone import api
 from rer.linkchecker.linkchecker import STATUS_CONNECTION_ERROR
 from rer.linkchecker.linkchecker import STATUS_HTTPS_ONLY
+from urllib3.exceptions import LocationParseError
 from uuid import uuid4
 
 import pytest
@@ -374,6 +375,18 @@ class TestLinkCheckerTool:
             tool._fetch_status(
                 "https://foo.com/bar", timeout=1, headers={}, session=session
             )
+            == STATUS_CONNECTION_ERROR
+        )
+
+    def test_unparsable_host_is_a_connection_error(self, linkchecker_content):
+        """The real-world case of a link glued to the following markup: its
+        host has a label longer than 63 chars, and urllib3 raises a
+        LocationParseError that requests does not wrap."""
+        tool = linkchecker_content["tool"]
+        link = "https://ambiente.regione.emilia-romagna.it%3c" + "a" * 80
+        session = FakeSession({link: LocationParseError(link)})
+        assert (
+            tool._fetch_status(link, timeout=1, headers={}, session=session)
             == STATUS_CONNECTION_ERROR
         )
 

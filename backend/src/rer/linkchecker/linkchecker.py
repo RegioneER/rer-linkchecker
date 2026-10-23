@@ -850,6 +850,13 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
                 return STATUS_TIMEOUT
             except requests.exceptions.RequestException:
                 return STATUS_CONNECTION_ERROR
+            except (urllib3.exceptions.HTTPError, ValueError):
+                # requests does not wrap everything urllib3 raises: a host
+                # with a label longer than 63 chars (e.g. a link glued to the
+                # following markup, "https://foo.it%3cbr...") fails only when
+                # connecting, with a bare LocationParseError. A malformed url
+                # cannot be reached: report it instead of killing the run.
+                return STATUS_CONNECTION_ERROR
 
         status = fetch(link)
         if not LinkCheckerTool._is_ok(status) and link.startswith("http://"):
