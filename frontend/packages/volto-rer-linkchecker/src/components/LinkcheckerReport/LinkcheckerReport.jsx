@@ -181,6 +181,10 @@ const outcomes = defineMessages({
     id: 'Connection error',
     defaultMessage: 'Connection error',
   },
+  '-4': {
+    id: 'Domain not allowed in contents',
+    defaultMessage: 'Domain not allowed in contents',
+  },
   400: {
     id: 'Invalid request',
     defaultMessage: 'Invalid request',
