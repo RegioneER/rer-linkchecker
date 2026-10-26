@@ -1,1 +1,0 @@
-Wait at most 5 seconds to open a connection, apart from the 15 allowed to answer: an unreachable host is found out in a third of the time, and reported as a connection error rather than a timeout. Tune it with `check_site(connect_timeout=...)` or `check_broken_links --connect-timeout`.

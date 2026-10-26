@@ -9,6 +9,21 @@
 
 <!-- towncrier release notes start -->
 
+## 1.1.0a0 (2026-10-26)
+
+
+### New features:
+
+- Give up on a host after 3 consecutive timeouts or connection errors: its remaining links get the same outcome without being fetched, and are tried again at the next run. A single dead host with tens of links no longer keeps two workers busy for minutes. Tune it with `check_site(host_max_failures=...)` or `check_broken_links --host-max-failures`, `0` to never give up. 
+- Report the links to a blacklisted domain, i.e. a domain contents must never link to (e.g. the editorial backend of the sites), as `-4` "Domain not allowed in contents", among the links to fix and without fetching them. The domains, which cover their subdomains too, are read from the `RER_LINKCHECKER_BLACKLIST_DOMAINS` environment variable, comma separated. 
+- Wait at most 5 seconds to open a connection, apart from the 15 allowed to answer: an unreachable host is found out in a third of the time, and reported as a connection error rather than a timeout. Tune it with `check_site(connect_timeout=...)` or `check_broken_links --connect-timeout`. 
+
+
+### Bug fixes:
+
+- Report a link whose host cannot be parsed (e.g. a label longer than 63 characters, typical of a url glued to the following markup) as a connection error, instead of crashing the whole check with an unhandled urllib3 `LocationParseError`. 
+- Stop extracting the markup or the punctuation that follows a url as part of the link: a url that is also the text of its own link (`https://a.it</a></span></p>`) or that ends a sentence (`https://a.it.`, `(https://a.it),`) was checked as written and reported as broken. 
+
 ## 1.0.1 (2026-10-21)
 
 No significant changes.

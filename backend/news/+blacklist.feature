@@ -1,1 +1,0 @@
-Report the links to a blacklisted domain, i.e. a domain contents must never link to (e.g. the editorial backend of the sites), as `-4` "Domain not allowed in contents", among the links to fix and without fetching them. The domains, which cover their subdomains too, are read from the `RER_LINKCHECKER_BLACKLIST_DOMAINS` environment variable, comma separated.

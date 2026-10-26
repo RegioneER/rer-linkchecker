@@ -8,6 +8,12 @@
 
 <!-- towncrier release notes start -->
 
+## 1.1.0-alpha.0 (2026-10-26)
+
+### Feature
+
+- Show the outcome of the links to a blacklisted domain (`-4`, "Domain not allowed in contents") among the links to fix. 
+
 ## 1.0.1 (2026-10-21)
 
 ## 1.0.0 (2026-10-20)

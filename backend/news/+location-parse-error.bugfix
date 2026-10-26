@@ -1,1 +1,0 @@
-Report a link whose host cannot be parsed (e.g. a label longer than 63 characters, typical of a url glued to the following markup) as a connection error, instead of crashing the whole check with an unhandled urllib3 `LocationParseError`.
