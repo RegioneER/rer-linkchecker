@@ -662,31 +662,47 @@ class TestBlacklist:
 class TestHostBreaker:
     def test_gives_up_after_consecutive_failures(self):
         breaker = HostBreaker(max_failures=3)
-        for status in (STATUS_TIMEOUT, STATUS_CONNECTION_ERROR):
-            breaker.record("dead.it", status)
+        for _ in range(2):
+            breaker.record("dead.it", STATUS_CONNECTION_ERROR)
         assert breaker.skip("dead.it", "https://dead.it/1") is None
-        breaker.record("dead.it", STATUS_TIMEOUT)
-        assert breaker.skip("dead.it", "https://dead.it/2") == STATUS_TIMEOUT
+        breaker.record("dead.it", STATUS_CONNECTION_ERROR)
+        assert breaker.skip("dead.it", "https://dead.it/2") == STATUS_CONNECTION_ERROR
         assert breaker.skipped == {"https://dead.it/2"}
         # the other hosts are not touched
         assert breaker.skip("ok.it", "https://ok.it/") is None
 
-    def test_any_answer_resets_the_count(self):
-        """An http error still proves the host is there."""
+    @pytest.mark.parametrize("answer", [404, 502, STATUS_TIMEOUT])
+    def test_any_answer_resets_the_count(self, answer):
+        """An http error, or a page too slow to answer, still proves the host
+        accepts connections."""
         breaker = HostBreaker(max_failures=3)
-        for status in (STATUS_TIMEOUT, STATUS_TIMEOUT, 404, STATUS_TIMEOUT):
-            breaker.record("slow.it", status)
-        assert breaker.skip("slow.it", "https://slow.it/") is None
+        for status in (
+            STATUS_CONNECTION_ERROR,
+            STATUS_CONNECTION_ERROR,
+            answer,
+            STATUS_CONNECTION_ERROR,
+        ):
+            breaker.record("flaky.it", status)
+        assert breaker.skip("flaky.it", "https://flaky.it/") is None
+
+    def test_timeouts_never_give_a_host_up(self):
+        """The real-world case of applicazioni.regione… on ambiente: 200, 502
+        or a timeout depending on the page. Given up on after three slow
+        pages in a row, it had 28 working links reported as timeouts."""
+        breaker = HostBreaker(max_failures=3)
+        for _ in range(10):
+            breaker.record("slow.it", STATUS_TIMEOUT)
+        assert breaker.skip("slow.it", "https://slow.it/working") is None
 
     @pytest.mark.parametrize("max_failures", [0, -1])
     def test_can_be_disabled(self, max_failures):
         breaker = HostBreaker(max_failures=max_failures)
         for _ in range(10):
-            breaker.record("dead.it", STATUS_TIMEOUT)
+            breaker.record("dead.it", STATUS_CONNECTION_ERROR)
         assert breaker.skip("dead.it", "https://dead.it/") is None
 
     def test_a_dead_host_is_given_up_on(self, linkchecker_content, fake_fetch):
-        fake_fetch.statuses = {"dead.it": STATUS_TIMEOUT, "ok.it": 200}
+        fake_fetch.statuses = {"dead.it": STATUS_CONNECTION_ERROR, "ok.it": 200}
         tool = linkchecker_content["tool"]
         dead = [f"https://dead.it/{i}" for i in range(10)]
 
@@ -695,7 +711,7 @@ class TestHostBreaker:
         )
 
         assert fake_fetch.calls == {"dead.it": 3, "ok.it": 1}
-        assert all(statuses[link] == STATUS_TIMEOUT for link in dead)
+        assert all(statuses[link] == STATUS_CONNECTION_ERROR for link in dead)
         assert statuses["https://ok.it/"] == 200
         # only what was fetched is cached: the skipped links are tried again
         # next time
@@ -714,8 +730,16 @@ class TestHostBreaker:
         assert fake_fetch.calls["dead.it"] <= 4
         assert set(statuses.values()) == {STATUS_CONNECTION_ERROR}
 
+    def test_a_slow_host_is_checked_link_by_link(self, linkchecker_content, fake_fetch):
+        fake_fetch.statuses = {"slow.it": STATUS_TIMEOUT}
+        slow = {f"https://slow.it/{i}" for i in range(10)}
+        linkchecker_content["tool"]._check_external_links(
+            slow, ttl=0, max_workers=1, host_max_failures=3
+        )
+        assert fake_fetch.calls == {"slow.it": 10}
+
     def test_disabled_fetches_everything(self, linkchecker_content, fake_fetch):
-        fake_fetch.statuses = {"dead.it": STATUS_TIMEOUT}
+        fake_fetch.statuses = {"dead.it": STATUS_CONNECTION_ERROR}
         dead = {f"https://dead.it/{i}" for i in range(10)}
         linkchecker_content["tool"]._check_external_links(
             dead, ttl=0, max_workers=1, host_max_failures=0

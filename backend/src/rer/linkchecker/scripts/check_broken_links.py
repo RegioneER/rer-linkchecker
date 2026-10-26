@@ -96,7 +96,7 @@ def parse_args(argv):
         "--host-max-failures",
         type=int,
         default=None,
-        help="consecutive timeouts / connection errors after which a host is "
+        help="consecutive connection errors after which a host is "
         "given up on for the run; 0 never gives up (default: the tool "
         "default, 3).",
     )

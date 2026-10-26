@@ -104,10 +104,10 @@ DEFAULT_WORKERS = 10
 CACHE_GC_EVERY = 500
 # max simultaneous requests to the same host (avoid hammering / rate limiting)
 DEFAULT_MAX_PER_HOST = 2
-# consecutive timeouts / connection errors after which a host is given up on
-# for the rest of the run (0 disables it): the requests run at most
-# DEFAULT_MAX_PER_HOST at a time, so a dead host with 70 links would otherwise
-# keep two workers busy for 70 timeouts
+# consecutive connection errors after which a host is given up on for the rest
+# of the run (0 disables it): the requests run at most DEFAULT_MAX_PER_HOST at
+# a time, so a dead host with 70 links would otherwise keep two workers busy
+# for 70 connect timeouts
 DEFAULT_HOST_MAX_FAILURES = 3
 # comma separated domains links must never point to (e.g. the editorial
 # backend of the sites): their links are reported without being fetched. A
@@ -130,8 +130,12 @@ STATUS_CONNECTION_ERROR = -3
 # the domain is blacklisted (see BLACKLIST_ENV): the link is wrong wherever it
 # points, and is not even fetched
 STATUS_BLACKLISTED = -4
-# what a host is given up on for (see DEFAULT_HOST_MAX_FAILURES)
-HOST_FAILURE_STATUSES = {STATUS_TIMEOUT, STATUS_CONNECTION_ERROR}
+# what a host is given up on for (see DEFAULT_HOST_MAX_FAILURES). Not a
+# timeout: the server did accept the connection, and a slow page tells
+# nothing about the next one. On ambiente, applicazioni.regione… answered 200,
+# 502 or a timeout depending on the page: given up on after three slow pages
+# in a row, it had 28 working links reported as timeouts.
+HOST_FAILURE_STATUSES = {STATUS_CONNECTION_ERROR}
 
 # translatable descriptions of the statuses a report usually shows. Explicit
 # msgids rather than the english text: 403 and 429 are both "blocked" in
@@ -281,10 +285,11 @@ def is_blacklisted(link, domains):
 class HostBreaker:
     """Give up on a host after ``max_failures`` consecutive failures.
 
-    A failure is a timeout or a connection error (HOST_FAILURE_STATUSES); any
-    other outcome, an http error included, proves the host answers and resets
-    the count. Once given up on, the links of the host not yet checked get the
-    status of the failure that tripped it, without being fetched.
+    A failure is a connection error (HOST_FAILURE_STATUSES); any other
+    outcome, an http error or a timeout included, proves the host accepts
+    connections and resets the count. Once given up on, the links of the host
+    not yet checked get the status of the failure that tripped it, without
+    being fetched.
 
     Shared by the worker threads, hence the lock. ``max_failures <= 0``
     disables it.
@@ -397,8 +402,8 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         :param timeout: per-request (read) timeout (seconds) for external links
         :param max_workers: number of concurrent threads checking external links
         :param connect_timeout: time (seconds) allowed to open a connection
-        :param host_max_failures: consecutive timeouts / connection errors
-            after which a host is given up on for the run (0: never)
+        :param host_max_failures: consecutive connection errors after which a
+            host is given up on for the run (0: never)
         """
         start = datetime.now()
         logger.info("# Start checking site for links #")

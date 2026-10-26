@@ -6,7 +6,7 @@ A Plone addon that checks every internal and external link found in site content
 
 - Adds a `portal_linkchecker` tool that crawls the whole site, collecting every link found in content fields and in Volto blocks (`resolveuid/...` links included).
 - Checks internal links by resolving them against the catalog, and external links concurrently over HTTP (configurable connect and read timeouts, thread pool size, and per-host throttling).
-- Gives up on a host after a few consecutive timeouts or connection errors: its remaining links get the same outcome without being fetched, so a dead host does not hold the run up for minutes.
+- Gives up on a host after a few consecutive connection errors: its remaining links get the same outcome without being fetched, so a dead host does not hold the run up for minutes.
 - Reports the links to a blacklisted domain (one contents must never link to, e.g. the editorial backend of the sites) without fetching them: see [Blacklisted domains](#blacklisted-domains).
 - Caches external link statuses for a configurable TTL, so repeated runs only re-check links that are due.
 - Distinguishes real broken links from bot-protection responses (`403`, `429`, LinkedIn's `999`: the link usually works for a human, so it is not counted as broken) and from `http://` links that only work over `https://` (reported apart, so the url can be updated in place).
@@ -62,7 +62,7 @@ Filter either with `tool.filter_links(items, status=[404], link_type="EXTERNAL")
 - `timeout`: per-request timeout, in seconds, for an external link to answer once connected.
 - `max_workers`: number of concurrent threads checking external links.
 - `connect_timeout`: seconds allowed to open the connection, never more than `timeout`. A host that does not accept the connection in time is a connection error (`-3`), not a timeout: raising the timeout would not bring it back.
-- `host_max_failures`: consecutive timeouts or connection errors after which a host is given up on for the run (`0` never gives up). Any other outcome, an http error included, proves the host answers and resets the count. The links left unchecked get the outcome of the failure that tripped it and are not cached, so the next run tries them again; the log lists each host given up on, with the number of links it left unchecked.
+- `host_max_failures`: consecutive connection errors after which a host is given up on for the run (`0` never gives up). Any other outcome, an http error or a timeout included, proves the host accepts connections and resets the count: a timeout is about a slow page, and the next page of the same host may well answer. The links left unchecked get the outcome of the failure that tripped it and are not cached, so the next run tries them again; the log lists each host given up on, with the number of links it left unchecked.
 
 #### Blacklisted domains
 
