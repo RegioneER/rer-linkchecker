@@ -560,6 +560,39 @@ class TestBlacklist:
     def test_is_blacklisted(self, link, expected):
         assert is_blacklisted(link, (BACKEND, "other.it")) is expected
 
+    @pytest.mark.parametrize(
+        "link,expected",
+        [
+            # the editorial domains of every site
+            ("https://ambiente-iam.regione.emilia-romagna.it/x", True),
+            ("https://salute-iam.regione.emilia-romagna.it/x", True),
+            ("https://AMBIENTE-IAM.regione.emilia-romagna.it:8080/x", True),
+            # * spans dots: a subdomain of an editorial domain is one too
+            ("https://www.ambiente-iam.regione.emilia-romagna.it/x", True),
+            # the pattern is matched over the whole host
+            ("https://iam.regione.emilia-romagna.it/x", False),
+            ("https://ambiente.regione.emilia-romagna.it/x", False),
+            ("https://ambiente-iam.regione.emilia-romagna.it.example.org/", False),
+            ("https://ambiente-iam.example.org/x", False),
+        ],
+    )
+    def test_is_blacklisted_by_pattern(self, link, expected):
+        domains = ("*-iam.regione.emilia-romagna.it",)
+        assert is_blacklisted(link, domains) is expected
+
+    def test_the_blacklist_wins_over_the_domain_of_the_site(
+        self, linkchecker_content, monkeypatch, fake_fetch
+    ):
+        """A check run on the editorial domain sees links to it as internal
+        (portal_url): blacklisted, they are reported all the same."""
+        tool = linkchecker_content["tool"]
+        link = f"{tool.portal_url}/foo"
+        monkeypatch.setenv(BLACKLIST_ENV, LinkCheckerTool._host_of(link))
+
+        statuses = tool._check_links({"uid": [link]}, ttl=0, max_workers=1)
+
+        assert statuses == {link: STATUS_BLACKLISTED}
+
     def test_domains_come_from_the_environment(self, monkeypatch):
         monkeypatch.setenv(BLACKLIST_ENV, f" {BACKEND.upper()} ,, other.it ")
         assert blacklisted_domains() == (BACKEND, "other.it")

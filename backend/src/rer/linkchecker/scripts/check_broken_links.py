@@ -201,10 +201,10 @@ def write_csv(tool, site_id, output_dir):
 
 def check_link(tool, args, link):
     """Verify a link as a full check would: (link_type, status)."""
-    if tool._is_internal(link):
-        return "INTERNAL", tool._check_internal_link(link)
     if is_blacklisted(link, blacklisted_domains()):
         return "EXTERNAL", STATUS_BLACKLISTED
+    if tool._is_internal(link):
+        return "INTERNAL", tool._check_internal_link(link)
     timeout = args.timeout if args.timeout is not None else DEFAULT_TIMEOUT
     connect_timeout = (
         args.connect_timeout

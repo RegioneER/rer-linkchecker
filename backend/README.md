@@ -70,13 +70,20 @@ Set `RER_LINKCHECKER_BLACKLIST_DOMAINS` in the environment of the instance (and 
 running the script) to a comma separated list of domains contents must never link to:
 
 ```shell
-RER_LINKCHECKER_BLACKLIST_DOMAINS="applicazioni.regione.emilia-romagna.it,other.example.org"
+RER_LINKCHECKER_BLACKLIST_DOMAINS="applicazioni.regione.emilia-romagna.it,*-iam.regione.emilia-romagna.it"
 ```
 
 A domain covers its subdomains too (`x.applicazioni.regione.emilia-romagna.it`), but not a host
-that merely ends with the same letters (`notapplicazioni.regione.emilia-romagna.it`); case and
-port do not matter. Their links are reported as `-4`, to fix, without any request, and are not
-cached: the variable is read at every check, so changing it takes effect at the next run.
+that merely ends with the same letters (`notapplicazioni.regione.emilia-romagna.it`). A domain
+with a `*` is a pattern matched over the whole host, `*` standing for any characters, dots
+included: `*-iam.regione.emilia-romagna.it` covers the editorial domain of every site
+(`ambiente-iam.…`, `salute-iam.…`), but not `iam.regione.emilia-romagna.it`. Case and port do
+not matter.
+
+Their links are reported as `-4`, to fix, without any request, and are not cached: the variable
+is read at every check, so changing it takes effect at the next run. The blacklist wins over
+the internal links too: when a check runs on a blacklisted domain (e.g. from the editorial
+domain of the site), the absolute links to it are reported all the same.
 
 ### The `check_broken_links` console script
 

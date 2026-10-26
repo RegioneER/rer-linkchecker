@@ -4,6 +4,7 @@ from BTrees.OOBTree import OOBTree
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from fnmatch import fnmatchcase
 from http.client import responses
 from OFS.SimpleItem import SimpleItem
 from plone import api
@@ -110,7 +111,8 @@ DEFAULT_MAX_PER_HOST = 2
 DEFAULT_HOST_MAX_FAILURES = 3
 # comma separated domains links must never point to (e.g. the editorial
 # backend of the sites): their links are reported without being fetched. A
-# domain covers its subdomains too.
+# domain covers its subdomains too; one with a * is a pattern instead, e.g.
+# *-iam.regione.emilia-romagna.it for the editorial domains of every site.
 BLACKLIST_ENV = "RER_LINKCHECKER_BLACKLIST_DOMAINS"
 # statuses returned by bot-protection: the link usually works for a human but
 # cannot be verified automatically (429 Too Many Requests, 403 Forbidden and
@@ -252,15 +254,28 @@ def blacklisted_domains():
 
 
 def is_blacklisted(link, domains):
-    """Whether the host of ``link`` is one of ``domains`` or a subdomain of
-    one: "notapplicazioni.regione…" is not "applicazioni.regione…"."""
+    """Whether the host of ``link`` matches one of ``domains``.
+
+    A plain domain matches itself and its subdomains, but not a host that
+    merely ends with the same letters: "notapplicazioni.regione…" is not
+    "applicazioni.regione…". A domain with a * is matched as a pattern over
+    the whole host, where * stands for any characters, dots included:
+    "*-iam.regione…" matches "ambiente-iam.regione…", not "iam.regione…".
+    """
     if not domains:
         return False
     try:
         host = (urlparse(link).hostname or "").lower()
     except ValueError:
         return False
-    return any(host == domain or host.endswith("." + domain) for domain in domains)
+    if not host:
+        return False
+    return any(
+        fnmatchcase(host, domain)
+        if "*" in domain
+        else host == domain or host.endswith("." + domain)
+        for domain in domains
+    )
 
 
 class HostBreaker:
@@ -451,7 +466,9 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         A link shared by ten pages is checked once; external links go through
         the concurrent checker, internal ones resolve against the ZODB and are
         therefore done in this thread. Links to a blacklisted domain are
-        neither: they are answered STATUS_BLACKLISTED on the spot.
+        neither: they are answered STATUS_BLACKLISTED on the spot, even when
+        the domain is the one the check runs on (portal_url), since the
+        blacklist names the domains contents must never point to.
 
         :return: dict link -> status, covering every link in ``outgoing``
         """
@@ -461,10 +478,10 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         blacklisted_links = set()
         for links in outgoing.values():
             for link in links:
-                if self._is_internal(link):
-                    internal_links.add(link)
-                elif is_blacklisted(link, domains):
+                if is_blacklisted(link, domains):
                     blacklisted_links.add(link)
+                elif self._is_internal(link):
+                    internal_links.add(link)
                 else:
                     external_links.add(link)
 
@@ -531,10 +548,10 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         domains = blacklisted_domains()
         results = []
         for link in self._find_links(content):
-            if self._is_internal(link):
-                status = self._check_internal_link(link)
-            elif is_blacklisted(link, domains):
+            if is_blacklisted(link, domains):
                 status = STATUS_BLACKLISTED
+            elif self._is_internal(link):
+                status = self._check_internal_link(link)
             else:
                 status = self._check_external_link(
                     link, ttl=ttl, timeout=timeout, connect_timeout=connect_timeout
