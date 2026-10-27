@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-10-05 13:07+0000\n"
+"POT-Creation-Date: 2026-10-23 20:47+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -35,131 +35,136 @@ msgid "Uninstall RER: Link checker setup."
 msgstr ""
 
 #. Default: "To check"
-#: rer/linkchecker/linkchecker.py:143
+#: rer/linkchecker/linkchecker.py:202
 msgid "action_check"
 msgstr ""
 
 #. Default: "To fix"
-#: rer/linkchecker/linkchecker.py:141
+#: rer/linkchecker/linkchecker.py:200
 msgid "action_fix"
 msgstr ""
 
 #. Default: "To update"
-#: rer/linkchecker/linkchecker.py:142
+#: rer/linkchecker/linkchecker.py:201
 msgid "action_update"
 msgstr ""
 
 #. Default: "Link actions"
-#: rer/linkchecker/linkchecker.py:134
+#: rer/linkchecker/linkchecker.py:193
 msgid "column_action"
 msgstr ""
 
 #. Default: "Link to check"
-#: rer/linkchecker/linkchecker.py:130
+#: rer/linkchecker/linkchecker.py:189
 msgid "column_link"
 msgstr ""
 
 #. Default: "Link type"
-#: rer/linkchecker/linkchecker.py:131
+#: rer/linkchecker/linkchecker.py:190
 msgid "column_link_type"
 msgstr ""
 
 #. Default: "Site content"
-#: rer/linkchecker/linkchecker.py:129
+#: rer/linkchecker/linkchecker.py:188
 msgid "column_page"
 msgstr ""
 
 #. Default: "Outcome"
-#: rer/linkchecker/linkchecker.py:132
+#: rer/linkchecker/linkchecker.py:191
 msgid "column_status"
 msgstr ""
 
 #. Default: "Outcome description"
-#: rer/linkchecker/linkchecker.py:133
+#: rer/linkchecker/linkchecker.py:192
 msgid "column_status_description"
 msgstr ""
 
 #. Default: "External"
-#: rer/linkchecker/linkchecker.py:138
+#: rer/linkchecker/linkchecker.py:197
 msgid "link_type_external"
 msgstr ""
 
 #. Default: "Internal"
-#: rer/linkchecker/linkchecker.py:137
+#: rer/linkchecker/linkchecker.py:196
 msgid "link_type_internal"
 msgstr ""
 
 #. Default: "Bad request"
-#: rer/linkchecker/linkchecker.py:85
+#: rer/linkchecker/linkchecker.py:139
 msgid "status_400"
 msgstr ""
 
 #. Default: "Unauthorized"
-#: rer/linkchecker/linkchecker.py:86
+#: rer/linkchecker/linkchecker.py:140
 msgid "status_401"
 msgstr ""
 
 #. Default: "Request blocked (forbidden)"
-#: rer/linkchecker/linkchecker.py:87
+#: rer/linkchecker/linkchecker.py:141
 msgid "status_403"
 msgstr ""
 
 #. Default: "Not Found"
-#: rer/linkchecker/linkchecker.py:88
+#: rer/linkchecker/linkchecker.py:142
 msgid "status_404"
 msgstr ""
 
 #. Default: "Check method not allowed"
-#: rer/linkchecker/linkchecker.py:89
+#: rer/linkchecker/linkchecker.py:143
 msgid "status_405"
 msgstr ""
 
 #. Default: "Gone"
-#: rer/linkchecker/linkchecker.py:90
+#: rer/linkchecker/linkchecker.py:144
 msgid "status_410"
 msgstr ""
 
 #. Default: "Check blocked: too many requests"
-#: rer/linkchecker/linkchecker.py:91
+#: rer/linkchecker/linkchecker.py:145
 msgid "status_429"
 msgstr ""
 
 #. Default: "Internal server error on the target server"
-#: rer/linkchecker/linkchecker.py:92
+#: rer/linkchecker/linkchecker.py:146
 msgid "status_500"
 msgstr ""
 
 #. Default: "Service temporarily unavailable"
-#: rer/linkchecker/linkchecker.py:93
+#: rer/linkchecker/linkchecker.py:147
 msgid "status_503"
 msgstr ""
 
 #. Default: "Target server is down"
-#: rer/linkchecker/linkchecker.py:94
+#: rer/linkchecker/linkchecker.py:148
 msgid "status_521"
 msgstr ""
 
 #. Default: "Invalid SSL certificate"
-#: rer/linkchecker/linkchecker.py:95
+#: rer/linkchecker/linkchecker.py:149
 msgid "status_526"
 msgstr ""
 
+#. Default: "Domain not allowed in contents (e.g. the editorial backend): replace the link"
+#: rer/linkchecker/linkchecker.py:162
+msgid "status_blacklisted"
+msgstr ""
+
 #. Default: "Blocked by bot protection (works for a human, not verifiable)"
-#: rer/linkchecker/linkchecker.py:110
+#: rer/linkchecker/linkchecker.py:169
 msgid "status_blocked"
 msgstr ""
 
 #. Default: "Connection error (host unreachable, DNS failure, ...)"
-#: rer/linkchecker/linkchecker.py:104
+#: rer/linkchecker/linkchecker.py:158
 msgid "status_connection_error"
 msgstr ""
 
 #. Default: "Broken over http but works over https: update the link"
-#: rer/linkchecker/linkchecker.py:100
+#: rer/linkchecker/linkchecker.py:154
 msgid "status_https_only"
 msgstr ""
 
 #. Default: "Timeout (server too slow; try raising the timeout)"
-#: rer/linkchecker/linkchecker.py:96
+#: rer/linkchecker/linkchecker.py:150
 msgid "status_timeout"
 msgstr ""

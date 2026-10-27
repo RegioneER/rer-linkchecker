@@ -13,6 +13,7 @@ import {
 const summary = [
   { status: 404, status_description: 'Not Found', count: 10 },
   { status: 410, status_description: 'Gone', count: 1 },
+  { status: -4, status_description: 'Domain not allowed', count: 3 },
   { status: -2, status_description: 'Works over https', count: 4 },
   { status: 403, status_description: 'Blocked', count: 7 },
   { status: 999, status_description: '', count: 2 },
@@ -20,7 +21,7 @@ const summary = [
 
 describe('statusesForAction', () => {
   it('asks for the outcomes that mean the link is gone', () => {
-    expect(statusesForAction(ACTION_FIX, summary)).toEqual([404, 410]);
+    expect(statusesForAction(ACTION_FIX, summary)).toEqual([404, 410, -4]);
   });
 
   it('asks for the one outcome that means the url is out of date', () => {
@@ -37,6 +38,7 @@ describe('statusesForAction', () => {
     const statuses = statusesForAction(ACTION_CHECK, summary);
     expect(statuses).not.toContain(404);
     expect(statuses).not.toContain(410);
+    expect(statuses).not.toContain(-4);
     expect(statuses).not.toContain(-2);
   });
 
@@ -57,7 +59,7 @@ describe('statusesForAction', () => {
 
 describe('countForAction', () => {
   it('adds up the outcomes the action answers for', () => {
-    expect(countForAction(ACTION_FIX, summary)).toBe(11);
+    expect(countForAction(ACTION_FIX, summary)).toBe(14);
     expect(countForAction(ACTION_UPDATE, summary)).toBe(4);
     expect(countForAction(ACTION_CHECK, summary)).toBe(9);
   });

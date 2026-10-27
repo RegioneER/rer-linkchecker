@@ -34,8 +34,12 @@ from AccessControl.SecurityManagement import newSecurityManager
 from AccessControl.users import system as system_user
 from datetime import datetime
 from plone import api
+from rer.linkchecker.linkchecker import blacklisted_domains
+from rer.linkchecker.linkchecker import DEFAULT_CONNECT_TIMEOUT
 from rer.linkchecker.linkchecker import DEFAULT_TIMEOUT
 from rer.linkchecker.linkchecker import format_duration
+from rer.linkchecker.linkchecker import is_blacklisted
+from rer.linkchecker.linkchecker import STATUS_BLACKLISTED
 from Testing.makerequest import makerequest
 from transaction import commit
 from zope.component.hooks import setSite
@@ -78,7 +82,23 @@ def parse_args(argv):
         "--timeout",
         type=float,
         default=None,
-        help="per-request timeout in seconds (default: the tool default, 15).",
+        help="per-request timeout in seconds, to answer once connected "
+        "(default: the tool default, 15).",
+    )
+    parser.add_argument(
+        "--connect-timeout",
+        type=float,
+        default=None,
+        help="seconds allowed to open a connection, never more than --timeout "
+        "(default: the tool default, 5).",
+    )
+    parser.add_argument(
+        "--host-max-failures",
+        type=int,
+        default=None,
+        help="consecutive connection errors after which a host is "
+        "given up on for the run; 0 never gives up (default: the tool "
+        "default, 3).",
     )
     parser.add_argument(
         "--output-dir",
@@ -138,6 +158,10 @@ def check_site_report(site, args):
             kwargs["timeout"] = args.timeout
         if args.workers is not None:
             kwargs["max_workers"] = args.workers
+        if args.connect_timeout is not None:
+            kwargs["connect_timeout"] = args.connect_timeout
+        if args.host_max_failures is not None:
+            kwargs["host_max_failures"] = args.host_max_failures
 
         # spelled out as the call it is: with no flags the dict repr would log
         # a puzzling "check_site({})", which reads like a wrong argument
@@ -175,15 +199,29 @@ def write_csv(tool, site_id, output_dir):
     return output
 
 
+def check_link(tool, args, link):
+    """Verify a link as a full check would: (link_type, status)."""
+    if is_blacklisted(link, blacklisted_domains()):
+        return "EXTERNAL", STATUS_BLACKLISTED
+    if tool._is_internal(link):
+        return "INTERNAL", tool._check_internal_link(link)
+    timeout = args.timeout if args.timeout is not None else DEFAULT_TIMEOUT
+    connect_timeout = (
+        args.connect_timeout
+        if args.connect_timeout is not None
+        else DEFAULT_CONNECT_TIMEOUT
+    )
+    return "EXTERNAL", tool._fetch_status(
+        link,
+        timeout=timeout,
+        headers=tool.request_headers,
+        connect_timeout=connect_timeout,
+    )
+
+
 def check_single_url(tool, args, url):
     """Verify a single url and log its status (nothing is stored)."""
-    timeout = args.timeout if args.timeout is not None else DEFAULT_TIMEOUT
-    if tool._is_internal(url):
-        link_type = "INTERNAL"
-        status = tool._check_internal_link(url)
-    else:
-        link_type = "EXTERNAL"
-        status = tool._fetch_status(url, timeout=timeout, headers=tool.request_headers)
+    link_type, status = check_link(tool, args, url)
     logger.info(
         "%s  %s  %s  %s",
         url,
@@ -195,17 +233,9 @@ def check_single_url(tool, args, url):
 
 def check_single_content(tool, args, obj):
     """Verify a single content's links and log them (nothing is stored)."""
-    timeout = args.timeout if args.timeout is not None else DEFAULT_TIMEOUT
     logger.info("## Links for %s ##", obj.absolute_url())
     for link in tool._find_links(obj):
-        if tool._is_internal(link):
-            link_type = "INTERNAL"
-            status = tool._check_internal_link(link)
-        else:
-            link_type = "EXTERNAL"
-            status = tool._fetch_status(
-                link, timeout=timeout, headers=tool.request_headers
-            )
+        link_type, status = check_link(tool, args, link)
         logger.info(
             "  %s  %s  %s  %s",
             link,

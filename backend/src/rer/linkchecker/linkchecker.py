@@ -4,6 +4,7 @@ from BTrees.OOBTree import OOBTree
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from fnmatch import fnmatchcase
 from http.client import responses
 from OFS.SimpleItem import SimpleItem
 from plone import api
@@ -22,6 +23,7 @@ from zope.schema import getFieldsInOrder
 
 import json
 import logging
+import os
 import re
 import requests
 import threading
@@ -42,10 +44,16 @@ class ILinkCheckerTool(Interface):
     def clear():
         """Clear the status"""
 
-    def check_site(ttl=3600 * 6, timeout=15, max_workers=10):
+    def check_site(
+        ttl=3600 * 6,
+        timeout=15,
+        max_workers=10,
+        connect_timeout=5,
+        host_max_failures=3,
+    ):
         """Check the site for links"""
 
-    def check_content(content, ttl=3600 * 6, timeout=15):
+    def check_content(content, ttl=3600 * 6, timeout=15, connect_timeout=5):
         """Check the content for links"""
 
 
@@ -87,11 +95,25 @@ DEFAULT_TTL = 3600 * 6
 # generous timeout: some (slow) PA servers answer in ~4-6s even unloaded, and
 # under concurrency they cross a tighter timeout and produce false -1 results
 DEFAULT_TIMEOUT = 15
+# time allowed to open the connection, apart from the time allowed to answer:
+# a host that does not even accept the connection is gone, and waiting the
+# whole read timeout to find it out is what made dead hosts so expensive
+DEFAULT_CONNECT_TIMEOUT = 5
 DEFAULT_WORKERS = 10
 # how often (in handled items) to release memory / create a savepoint
 CACHE_GC_EVERY = 500
 # max simultaneous requests to the same host (avoid hammering / rate limiting)
 DEFAULT_MAX_PER_HOST = 2
+# consecutive connection errors after which a host is given up on for the rest
+# of the run (0 disables it): the requests run at most DEFAULT_MAX_PER_HOST at
+# a time, so a dead host with 70 links would otherwise keep two workers busy
+# for 70 connect timeouts
+DEFAULT_HOST_MAX_FAILURES = 3
+# comma separated domains links must never point to (e.g. the editorial
+# backend of the sites): their links are reported without being fetched. A
+# domain covers its subdomains too; one with a * is a pattern instead, e.g.
+# *-iam.regione.emilia-romagna.it for the editorial domains of every site.
+BLACKLIST_ENV = "RER_LINKCHECKER_BLACKLIST_DOMAINS"
 # statuses returned by bot-protection: the link usually works for a human but
 # cannot be verified automatically (429 Too Many Requests, 403 Forbidden and
 # LinkedIn's non-standard 999). Reported apart, not counted as broken.
@@ -105,6 +127,15 @@ STATUS_TIMEOUT = -1
 STATUS_HTTPS_ONLY = -2
 # connection error: host unreachable, DNS failure, connection refused/reset...
 STATUS_CONNECTION_ERROR = -3
+# the domain is blacklisted (see BLACKLIST_ENV): the link is wrong wherever it
+# points, and is not even fetched
+STATUS_BLACKLISTED = -4
+# what a host is given up on for (see DEFAULT_HOST_MAX_FAILURES). Not a
+# timeout: the server did accept the connection, and a slow page tells
+# nothing about the next one. On ambiente, applicazioni.regione… answered 200,
+# 502 or a timeout depending on the page: given up on after three slow pages
+# in a row, it had 28 working links reported as timeouts.
+HOST_FAILURE_STATUSES = {STATUS_CONNECTION_ERROR}
 
 # translatable descriptions of the statuses a report usually shows. Explicit
 # msgids rather than the english text: 403 and 429 are both "blocked" in
@@ -134,6 +165,11 @@ STATUS_DESCRIPTIONS = {
         "status_connection_error",
         default="Connection error (host unreachable, DNS failure, ...)",
     ),
+    STATUS_BLACKLISTED: _(
+        "status_blacklisted",
+        default="Domain not allowed in contents (e.g. the editorial backend): "
+        "replace the link",
+    ),
 }
 # any other bot-protection status (e.g. LinkedIn's 999)
 STATUS_BLOCKED = _(
@@ -147,8 +183,8 @@ STATUS_BLOCKED = _(
 ACTION_FIX = "fix"
 ACTION_UPDATE = "update"
 ACTION_CHECK = "check"
-# gone: the link has to be removed or replaced
-FIX_STATUSES = {404, 410}
+# gone, or never to be linked: the link has to be removed or replaced
+FIX_STATUSES = {404, 410, STATUS_BLACKLISTED}
 # reachable over https, so only the url is out of date
 UPDATE_STATUSES = {STATUS_HTTPS_ONLY}
 
@@ -207,6 +243,87 @@ def log_progress(items, label, total, unit="items"):
             logger.info("### %s %d%% (%d/%d %s) ###", label, percentage, i, total, unit)
             next_update += 5
         yield item
+
+
+def blacklisted_domains():
+    """The domains of BLACKLIST_ENV, lowercased.
+
+    Read on every call rather than once at import: the variable belongs to the
+    deployment, and the tests set it per case.
+    """
+    value = os.environ.get(BLACKLIST_ENV, "")
+    return tuple(
+        domain.strip().lower() for domain in value.split(",") if domain.strip()
+    )
+
+
+def is_blacklisted(link, domains):
+    """Whether the host of ``link`` matches one of ``domains``.
+
+    A plain domain matches itself and its subdomains, but not a host that
+    merely ends with the same letters: "notapplicazioni.regione…" is not
+    "applicazioni.regione…". A domain with a * is matched as a pattern over
+    the whole host, where * stands for any characters, dots included:
+    "*-iam.regione…" matches "ambiente-iam.regione…", not "iam.regione…".
+    """
+    if not domains:
+        return False
+    try:
+        host = (urlparse(link).hostname or "").lower()
+    except ValueError:
+        return False
+    if not host:
+        return False
+    return any(
+        fnmatchcase(host, domain)
+        if "*" in domain
+        else host == domain or host.endswith("." + domain)
+        for domain in domains
+    )
+
+
+class HostBreaker:
+    """Give up on a host after ``max_failures`` consecutive failures.
+
+    A failure is a connection error (HOST_FAILURE_STATUSES); any other
+    outcome, an http error or a timeout included, proves the host accepts
+    connections and resets the count. Once given up on, the links of the host
+    not yet checked get the status of the failure that tripped it, without
+    being fetched.
+
+    Shared by the worker threads, hence the lock. ``max_failures <= 0``
+    disables it.
+    """
+
+    def __init__(self, max_failures=DEFAULT_HOST_MAX_FAILURES):
+        self.max_failures = max_failures
+        self._lock = threading.Lock()
+        self._failures = {}
+        # host -> the status it was given up on for
+        self.given_up = {}
+        # the links answered by the breaker instead of the network
+        self.skipped = set()
+
+    def skip(self, host, link):
+        """The status to report for ``link`` without fetching it, if its host
+        was given up on; None if it has to be fetched."""
+        with self._lock:
+            status = self.given_up.get(host)
+            if status is not None:
+                self.skipped.add(link)
+            return status
+
+    def record(self, host, status):
+        """Account for the outcome of a request to ``host``."""
+        if self.max_failures <= 0:
+            return
+        with self._lock:
+            if status not in HOST_FAILURE_STATUSES:
+                self._failures[host] = 0
+                return
+            self._failures[host] = self._failures.get(host, 0) + 1
+            if self._failures[host] >= self.max_failures:
+                self.given_up.setdefault(host, status)
 
 
 @implementer(ILinkCheckerTool)
@@ -272,20 +389,33 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         self._last_duration = None
 
     def check_site(
-        self, ttl=DEFAULT_TTL, timeout=DEFAULT_TIMEOUT, max_workers=DEFAULT_WORKERS
+        self,
+        ttl=DEFAULT_TTL,
+        timeout=DEFAULT_TIMEOUT,
+        max_workers=DEFAULT_WORKERS,
+        connect_timeout=DEFAULT_CONNECT_TIMEOUT,
+        host_max_failures=DEFAULT_HOST_MAX_FAILURES,
     ):
         """Check the site for links
 
         :param ttl: the time to live for the external links status
-        :param timeout: per-request timeout (seconds) for external links
+        :param timeout: per-request (read) timeout (seconds) for external links
         :param max_workers: number of concurrent threads checking external links
+        :param connect_timeout: time (seconds) allowed to open a connection
+        :param host_max_failures: consecutive connection errors after which a
+            host is given up on for the run (0: never)
         """
         start = datetime.now()
         logger.info("# Start checking site for links #")
         portal = api.portal.get()
         outgoing = self._crawl_outgoing_links(portal)
         statuses = self._check_links(
-            outgoing, ttl=ttl, timeout=timeout, max_workers=max_workers
+            outgoing,
+            ttl=ttl,
+            timeout=timeout,
+            max_workers=max_workers,
+            connect_timeout=connect_timeout,
+            host_max_failures=host_max_failures,
         )
         self._store_results(outgoing, statuses)
 
@@ -333,32 +463,50 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         ttl=DEFAULT_TTL,
         timeout=DEFAULT_TIMEOUT,
         max_workers=DEFAULT_WORKERS,
+        connect_timeout=DEFAULT_CONNECT_TIMEOUT,
+        host_max_failures=DEFAULT_HOST_MAX_FAILURES,
     ):
         """Phase 2: check every *unique* link the crawl found.
 
         A link shared by ten pages is checked once; external links go through
         the concurrent checker, internal ones resolve against the ZODB and are
-        therefore done in this thread.
+        therefore done in this thread. Links to a blacklisted domain are
+        neither: they are answered STATUS_BLACKLISTED on the spot, even when
+        the domain is the one the check runs on (portal_url), since the
+        blacklist names the domains contents must never point to.
 
         :return: dict link -> status, covering every link in ``outgoing``
         """
+        domains = blacklisted_domains()
         internal_links = set()
         external_links = set()
+        blacklisted_links = set()
         for links in outgoing.values():
             for link in links:
-                if self._is_internal(link):
+                if is_blacklisted(link, domains):
+                    blacklisted_links.add(link)
+                elif self._is_internal(link):
                     internal_links.add(link)
                 else:
                     external_links.add(link)
 
         logger.info(
-            "# Checking %d unique external and %d unique internal links #",
+            "# Checking %d unique external and %d unique internal links "
+            "(%d more to a blacklisted domain, not checked) #",
             len(external_links),
             len(internal_links),
+            len(blacklisted_links),
         )
         statuses = self._check_external_links(
-            external_links, ttl=ttl, timeout=timeout, max_workers=max_workers
+            external_links,
+            ttl=ttl,
+            timeout=timeout,
+            max_workers=max_workers,
+            connect_timeout=connect_timeout,
+            host_max_failures=host_max_failures,
         )
+        # not cached: the status is the blacklist's, which may change any time
+        statuses.update(dict.fromkeys(blacklisted_links, STATUS_BLACKLISTED))
         for link in log_progress(
             internal_links, "INTERNAL LINKS", len(internal_links), unit="links"
         ):
@@ -384,20 +532,35 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         if stale:
             logger.info("# Removed %d stale content(s) from results #", len(stale))
 
-    def check_content(self, content, ttl=DEFAULT_TTL, timeout=DEFAULT_TIMEOUT):
+    def check_content(
+        self,
+        content,
+        ttl=DEFAULT_TTL,
+        timeout=DEFAULT_TIMEOUT,
+        connect_timeout=DEFAULT_CONNECT_TIMEOUT,
+    ):
         """Check the content for links
+
+        One content, one link after the other: no HostBreaker here, there are
+        too few links to the same host for it to pay off.
 
         :param content: the content to check
         :param ttl: the time to live for the external links status
-        :param timeout: per-request timeout (seconds) for external links
+        :param timeout: per-request (read) timeout (seconds) for external links
+        :param connect_timeout: time (seconds) allowed to open a connection
         """
         uuid = content.UID()
+        domains = blacklisted_domains()
         results = []
         for link in self._find_links(content):
-            if self._is_internal(link):
+            if is_blacklisted(link, domains):
+                status = STATUS_BLACKLISTED
+            elif self._is_internal(link):
                 status = self._check_internal_link(link)
             else:
-                status = self._check_external_link(link, ttl=ttl, timeout=timeout)
+                status = self._check_external_link(
+                    link, ttl=ttl, timeout=timeout, connect_timeout=connect_timeout
+                )
             results.append((link, status))
         self._outgoing_links[uuid] = (datetime.now(), results)
 
@@ -638,12 +801,17 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         timeout=DEFAULT_TIMEOUT,
         max_workers=DEFAULT_WORKERS,
         max_per_host=DEFAULT_MAX_PER_HOST,
+        connect_timeout=DEFAULT_CONNECT_TIMEOUT,
+        host_max_failures=DEFAULT_HOST_MAX_FAILURES,
     ):
         """Check a set of unique external links, concurrently.
 
         Requests to the same host are throttled to ``max_per_host`` at a time
         so we don't hammer a single server (which would answer 503 / time out
         and produce false positives); different hosts still run in parallel.
+        A host that keeps failing is given up on (see HostBreaker): the links
+        it leaves unchecked are reported, but not cached, so the next run
+        tries them again.
 
         :return: dict link -> status
         """
@@ -672,6 +840,7 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         # away: the results are collected in a plain list and written to the
         # cache once the database is back
         reconnect = self._disconnect_db()
+        breaker = HostBreaker(host_max_failures)
         fetched = list(
             log_progress(
                 self._fetch_statuses(
@@ -679,6 +848,8 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
                     timeout=timeout,
                     max_workers=max_workers,
                     max_per_host=max_per_host,
+                    connect_timeout=connect_timeout,
+                    breaker=breaker,
                 ),
                 "EXTERNAL LINKS",
                 len(to_check),
@@ -693,9 +864,27 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         # to a ttl measured in hours
         now = datetime.now()
         for link, status in fetched:
-            self._external_links_status[link] = (now, status)
             statuses[link] = status
+            if link not in breaker.skipped:
+                self._external_links_status[link] = (now, status)
+        self._log_given_up_hosts(breaker)
         return statuses
+
+    def _log_given_up_hosts(self, breaker):
+        """One line per host the breaker gave up on, with what it cost."""
+        skipped = {}
+        for link in breaker.skipped:
+            host = self._host_of(link)
+            skipped[host] = skipped.get(host, 0) + 1
+        for host, status in sorted(breaker.given_up.items()):
+            logger.info(
+                "# Host %s given up after %d consecutive failures (%s): "
+                "%d links not checked #",
+                host,
+                breaker.max_failures,
+                self._status_description(status),
+                skipped.get(host, 0),
+            )
 
     def _disconnect_db(self):
         """Hand the database connection back before the network phase.
@@ -773,9 +962,13 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         timeout=DEFAULT_TIMEOUT,
         max_workers=DEFAULT_WORKERS,
         max_per_host=DEFAULT_MAX_PER_HOST,
+        connect_timeout=DEFAULT_CONNECT_TIMEOUT,
+        breaker=None,
     ):
         """Yield (link, status) for each link in ``to_check``, over the network.
 
+        Or not over the network, for the links of a host ``breaker`` gave up
+        on: it answers for them, and keeps track of which ones it answered.
         With ``max_workers <= 1`` the checks run inline in the current thread
         (no ThreadPoolExecutor): handy to drop a pdb breakpoint, since a
         debugger cannot attach to worker threads. Nothing here touches the
@@ -793,12 +986,27 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
             for host in {self._host_of(link) for link in to_check}
         }
 
+        if breaker is None:
+            breaker = HostBreaker(max_failures=0)
+
         def worker(link):
-            with semaphores[self._host_of(link)]:
+            host = self._host_of(link)
+            with semaphores[host]:
+                # asked once the semaphore is ours: the links queued behind
+                # the requests that gave the host up must not start either
+                status = breaker.skip(host, link)
+                if status is not None:
+                    logger.debug("Skipped external link %s -> %s", link, status)
+                    return status
                 logger.debug("Checking external link %s", link)
                 status = self._fetch_status(
-                    link, timeout=timeout, headers=headers, session=session
+                    link,
+                    timeout=timeout,
+                    headers=headers,
+                    session=session,
+                    connect_timeout=connect_timeout,
                 )
+                breaker.record(host, status)
                 logger.debug("Checked external link %s -> %s", link, status)
                 return status
 
@@ -819,7 +1027,13 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         except ValueError:
             return ""
 
-    def _check_external_link(self, link, ttl=DEFAULT_TTL, timeout=DEFAULT_TIMEOUT):
+    def _check_external_link(
+        self,
+        link,
+        ttl=DEFAULT_TTL,
+        timeout=DEFAULT_TIMEOUT,
+        connect_timeout=DEFAULT_CONNECT_TIMEOUT,
+    ):
         """Check a single external link, honoring the cached status"""
         logger.debug("Checking external link %s", link)
         cached = self._external_links_status.get(link)
@@ -828,13 +1042,24 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
             if (datetime.now() - last_update).total_seconds() < ttl:
                 return status
         headers = self.request_headers
-        status = self._fetch_status(link, timeout=timeout, headers=headers)
+        status = self._fetch_status(
+            link, timeout=timeout, headers=headers, connect_timeout=connect_timeout
+        )
         self._external_links_status[link] = (datetime.now(), status)
         return status
 
     @staticmethod
-    def _fetch_status(link, timeout, headers, session=None):
+    def _fetch_status(
+        link, timeout, headers, session=None, connect_timeout=DEFAULT_CONNECT_TIMEOUT
+    ):
         """Fetch the status of an external link.
+
+        ``timeout`` is the time allowed to answer, ``connect_timeout`` the time
+        allowed to open the connection, never longer than ``timeout``: whoever
+        asks for 3 seconds does not expect to wait 5 for a dead host. A host
+        that does not accept the connection in time is a connection error,
+        not a timeout: raising the timeout, which is what STATUS_TIMEOUT
+        suggests, would not bring it back.
 
         HEAD avoids downloading the body; some servers mishandle HEAD, so
         statuses >= 400 are double-checked with a streaming GET.
@@ -852,13 +1077,14 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
         """
         if session is None:
             session = requests.Session()
+        timeouts = (min(connect_timeout, timeout), timeout)
 
         def fetch(url):
             try:
                 res = session.head(
                     url,
                     headers=headers,
-                    timeout=timeout,
+                    timeout=timeouts,
                     allow_redirects=True,
                     verify=False,
                 )
@@ -867,13 +1093,16 @@ class LinkCheckerTool(UniqueObject, SimpleItem):
                     res = session.get(
                         url,
                         headers=headers,
-                        timeout=timeout,
+                        timeout=timeouts,
                         stream=True,
                         verify=False,
                     )
                     status = res.status_code
                     res.close()
                 return status
+            except requests.exceptions.ConnectTimeout:
+                # before Timeout, which it subclasses
+                return STATUS_CONNECTION_ERROR
             except requests.exceptions.Timeout:
                 return STATUS_TIMEOUT
             except requests.exceptions.RequestException:

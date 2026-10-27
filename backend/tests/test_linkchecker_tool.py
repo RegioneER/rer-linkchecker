@@ -1,14 +1,24 @@
 from datetime import datetime
 from plone import api
+from rer.linkchecker.linkchecker import BLACKLIST_ENV
+from rer.linkchecker.linkchecker import blacklisted_domains
 from rer.linkchecker.linkchecker import extract_links
+from rer.linkchecker.linkchecker import HostBreaker
+from rer.linkchecker.linkchecker import is_blacklisted
+from rer.linkchecker.linkchecker import LinkCheckerTool
+from rer.linkchecker.linkchecker import STATUS_BLACKLISTED
 from rer.linkchecker.linkchecker import STATUS_CONNECTION_ERROR
 from rer.linkchecker.linkchecker import STATUS_HTTPS_ONLY
+from rer.linkchecker.linkchecker import STATUS_TIMEOUT
+from rer.linkchecker.scripts.check_broken_links import check_link
+from rer.linkchecker.scripts.check_broken_links import parse_args
 from urllib3.exceptions import LocationParseError
 from uuid import uuid4
 
 import json
 import pytest
 import requests
+import threading
 
 
 class FakeResponse:
@@ -490,3 +500,292 @@ class TestLinkCheckerTool:
         left alone -- committing here would persist whatever the caller had
         in flight."""
         assert linkchecker_content["tool"]._disconnect_db() is False
+
+
+class RecordingSession(FakeSession):
+    """A FakeSession that also keeps the timeout of every request."""
+
+    def __init__(self, statuses):
+        super().__init__(statuses)
+        self.timeouts = []
+
+    def head(self, url, verify=True, timeout=None, **kwargs):
+        self.timeouts.append(timeout)
+        return super().head(url, verify=verify, **kwargs)
+
+    get = head
+
+
+class FakeFetch:
+    """Stands in for _fetch_status: ``statuses`` maps a host to the status
+    every link of that host answers. Counts the requests per host."""
+
+    def __init__(self, statuses):
+        self.statuses = statuses
+        self.calls = {}
+        self.lock = threading.Lock()
+
+    def __call__(self, link, timeout, headers, session=None, **kwargs):
+        host = LinkCheckerTool._host_of(link)
+        with self.lock:
+            self.calls[host] = self.calls.get(host, 0) + 1
+        return self.statuses[host]
+
+
+@pytest.fixture
+def fake_fetch(monkeypatch):
+    """Replace the network with a FakeFetch, returned for the test to fill."""
+    fetch = FakeFetch({})
+    monkeypatch.setattr(LinkCheckerTool, "_fetch_status", staticmethod(fetch))
+    return fetch
+
+
+BACKEND = "applicazioni.regione.emilia-romagna.it"
+
+
+class TestBlacklist:
+    @pytest.mark.parametrize(
+        "link,expected",
+        [
+            (f"https://{BACKEND}/x", True),
+            # subdomains are covered, the case and the port do not matter
+            (f"https://x.{BACKEND}/y", True),
+            ("http://APPLICAZIONI.regione.emilia-romagna.it:8080/y", True),
+            # a host that merely ends with the same letters is not
+            ("https://notapplicazioni.regione.emilia-romagna.it/x", False),
+            ("https://regione.emilia-romagna.it/x", False),
+            ("https://example.org/?next=https://" + BACKEND, False),
+        ],
+    )
+    def test_is_blacklisted(self, link, expected):
+        assert is_blacklisted(link, (BACKEND, "other.it")) is expected
+
+    @pytest.mark.parametrize(
+        "link,expected",
+        [
+            # the editorial domains of every site
+            ("https://ambiente-iam.regione.emilia-romagna.it/x", True),
+            ("https://salute-iam.regione.emilia-romagna.it/x", True),
+            ("https://AMBIENTE-IAM.regione.emilia-romagna.it:8080/x", True),
+            # * spans dots: a subdomain of an editorial domain is one too
+            ("https://www.ambiente-iam.regione.emilia-romagna.it/x", True),
+            # the pattern is matched over the whole host
+            ("https://iam.regione.emilia-romagna.it/x", False),
+            ("https://ambiente.regione.emilia-romagna.it/x", False),
+            ("https://ambiente-iam.regione.emilia-romagna.it.example.org/", False),
+            ("https://ambiente-iam.example.org/x", False),
+        ],
+    )
+    def test_is_blacklisted_by_pattern(self, link, expected):
+        domains = ("*-iam.regione.emilia-romagna.it",)
+        assert is_blacklisted(link, domains) is expected
+
+    def test_the_blacklist_wins_over_the_domain_of_the_site(
+        self, linkchecker_content, monkeypatch, fake_fetch
+    ):
+        """A check run on the editorial domain sees links to it as internal
+        (portal_url): blacklisted, they are reported all the same."""
+        tool = linkchecker_content["tool"]
+        link = f"{tool.portal_url}/foo"
+        monkeypatch.setenv(BLACKLIST_ENV, LinkCheckerTool._host_of(link))
+
+        statuses = tool._check_links({"uid": [link]}, ttl=0, max_workers=1)
+
+        assert statuses == {link: STATUS_BLACKLISTED}
+
+    def test_domains_come_from_the_environment(self, monkeypatch):
+        monkeypatch.setenv(BLACKLIST_ENV, f" {BACKEND.upper()} ,, other.it ")
+        assert blacklisted_domains() == (BACKEND, "other.it")
+
+    @pytest.mark.parametrize("value", [None, "", " , "])
+    def test_no_domains(self, monkeypatch, value):
+        if value is None:
+            monkeypatch.delenv(BLACKLIST_ENV, raising=False)
+        else:
+            monkeypatch.setenv(BLACKLIST_ENV, value)
+        assert blacklisted_domains() == ()
+        assert not is_blacklisted(f"https://{BACKEND}/x", blacklisted_domains())
+
+    def test_blacklisted_links_are_not_fetched(
+        self, linkchecker_content, monkeypatch, fake_fetch
+    ):
+        monkeypatch.setenv(BLACKLIST_ENV, BACKEND)
+        fake_fetch.statuses = {"example.org": 200}
+        tool = linkchecker_content["tool"]
+        links = [f"https://{BACKEND}/x", f"https://x.{BACKEND}/y"]
+
+        statuses = tool._check_links(
+            {"uid": [*links, "https://example.org/"]}, ttl=0, max_workers=1
+        )
+
+        assert statuses == {
+            links[0]: STATUS_BLACKLISTED,
+            links[1]: STATUS_BLACKLISTED,
+            "https://example.org/": 200,
+        }
+        assert fake_fetch.calls == {"example.org": 1}
+        # the blacklist may change any time: its answer is not cached
+        assert links[0] not in tool._external_links_status
+
+    def test_check_content_honors_the_blacklist(
+        self, linkchecker_content, monkeypatch, fake_fetch
+    ):
+        monkeypatch.setenv(BLACKLIST_ENV, BACKEND)
+        tool = linkchecker_content["tool"]
+        document = linkchecker_content["document"]
+        document.blocks = {"abc": {"@type": "html", "html": f"https://{BACKEND}/x"}}
+
+        tool.check_content(document)
+
+        assert tool._outgoing_links[document.UID()][1] == [
+            (f"https://{BACKEND}/x", STATUS_BLACKLISTED)
+        ]
+        assert fake_fetch.calls == {}
+
+    def test_the_script_honors_the_blacklist(
+        self, linkchecker_content, monkeypatch, fake_fetch
+    ):
+        monkeypatch.setenv(BLACKLIST_ENV, BACKEND)
+        args = parse_args(["check_broken_links"])
+        assert check_link(
+            linkchecker_content["tool"], args, f"https://{BACKEND}/x"
+        ) == (
+            "EXTERNAL",
+            STATUS_BLACKLISTED,
+        )
+        assert fake_fetch.calls == {}
+
+    def test_blacklisted_links_are_to_fix(self):
+        assert LinkCheckerTool._action(STATUS_BLACKLISTED) == "fix"
+
+
+class TestHostBreaker:
+    def test_gives_up_after_consecutive_failures(self):
+        breaker = HostBreaker(max_failures=3)
+        for _ in range(2):
+            breaker.record("dead.it", STATUS_CONNECTION_ERROR)
+        assert breaker.skip("dead.it", "https://dead.it/1") is None
+        breaker.record("dead.it", STATUS_CONNECTION_ERROR)
+        assert breaker.skip("dead.it", "https://dead.it/2") == STATUS_CONNECTION_ERROR
+        assert breaker.skipped == {"https://dead.it/2"}
+        # the other hosts are not touched
+        assert breaker.skip("ok.it", "https://ok.it/") is None
+
+    @pytest.mark.parametrize("answer", [404, 502, STATUS_TIMEOUT])
+    def test_any_answer_resets_the_count(self, answer):
+        """An http error, or a page too slow to answer, still proves the host
+        accepts connections."""
+        breaker = HostBreaker(max_failures=3)
+        for status in (
+            STATUS_CONNECTION_ERROR,
+            STATUS_CONNECTION_ERROR,
+            answer,
+            STATUS_CONNECTION_ERROR,
+        ):
+            breaker.record("flaky.it", status)
+        assert breaker.skip("flaky.it", "https://flaky.it/") is None
+
+    def test_timeouts_never_give_a_host_up(self):
+        """The real-world case of applicazioni.regione… on ambiente: 200, 502
+        or a timeout depending on the page. Given up on after three slow
+        pages in a row, it had 28 working links reported as timeouts."""
+        breaker = HostBreaker(max_failures=3)
+        for _ in range(10):
+            breaker.record("slow.it", STATUS_TIMEOUT)
+        assert breaker.skip("slow.it", "https://slow.it/working") is None
+
+    @pytest.mark.parametrize("max_failures", [0, -1])
+    def test_can_be_disabled(self, max_failures):
+        breaker = HostBreaker(max_failures=max_failures)
+        for _ in range(10):
+            breaker.record("dead.it", STATUS_CONNECTION_ERROR)
+        assert breaker.skip("dead.it", "https://dead.it/") is None
+
+    def test_a_dead_host_is_given_up_on(self, linkchecker_content, fake_fetch):
+        fake_fetch.statuses = {"dead.it": STATUS_CONNECTION_ERROR, "ok.it": 200}
+        tool = linkchecker_content["tool"]
+        dead = [f"https://dead.it/{i}" for i in range(10)]
+
+        statuses = tool._check_external_links(
+            {*dead, "https://ok.it/"}, ttl=0, max_workers=1, host_max_failures=3
+        )
+
+        assert fake_fetch.calls == {"dead.it": 3, "ok.it": 1}
+        assert all(statuses[link] == STATUS_CONNECTION_ERROR for link in dead)
+        assert statuses["https://ok.it/"] == 200
+        # only what was fetched is cached: the skipped links are tried again
+        # next time
+        assert sum(link in tool._external_links_status for link in dead) == 3
+
+    def test_given_up_on_in_the_worker_threads(self, linkchecker_content, fake_fetch):
+        """With max_per_host requests in flight when the host is given up on,
+        at most max_per_host - 1 more go out after the one that tripped it."""
+        fake_fetch.statuses = {"dead.it": STATUS_CONNECTION_ERROR}
+        dead = {f"https://dead.it/{i}" for i in range(50)}
+
+        statuses = linkchecker_content["tool"]._check_external_links(
+            dead, ttl=0, max_workers=8, max_per_host=2, host_max_failures=3
+        )
+
+        assert fake_fetch.calls["dead.it"] <= 4
+        assert set(statuses.values()) == {STATUS_CONNECTION_ERROR}
+
+    def test_a_slow_host_is_checked_link_by_link(self, linkchecker_content, fake_fetch):
+        fake_fetch.statuses = {"slow.it": STATUS_TIMEOUT}
+        slow = {f"https://slow.it/{i}" for i in range(10)}
+        linkchecker_content["tool"]._check_external_links(
+            slow, ttl=0, max_workers=1, host_max_failures=3
+        )
+        assert fake_fetch.calls == {"slow.it": 10}
+
+    def test_disabled_fetches_everything(self, linkchecker_content, fake_fetch):
+        fake_fetch.statuses = {"dead.it": STATUS_CONNECTION_ERROR}
+        dead = {f"https://dead.it/{i}" for i in range(10)}
+        linkchecker_content["tool"]._check_external_links(
+            dead, ttl=0, max_workers=1, host_max_failures=0
+        )
+        assert fake_fetch.calls == {"dead.it": 10}
+
+
+class TestTimeouts:
+    def test_connect_and_read_timeouts(self, linkchecker_content):
+        session = RecordingSession({"https://foo.com/bar": 404})
+        linkchecker_content["tool"]._fetch_status(
+            "https://foo.com/bar",
+            timeout=15,
+            headers={},
+            session=session,
+            connect_timeout=5,
+        )
+        # HEAD, then the GET double check of the 404
+        assert session.timeouts == [(5, 15), (5, 15)]
+
+    def test_connect_timeout_never_exceeds_the_timeout(self, linkchecker_content):
+        session = RecordingSession({"https://foo.com/bar": 200})
+        linkchecker_content["tool"]._fetch_status(
+            "https://foo.com/bar", timeout=3, headers={}, session=session
+        )
+        assert session.timeouts == [(3, 3)]
+
+    def test_a_connect_timeout_is_a_connection_error(self, linkchecker_content):
+        """The host did not even accept the connection: raising the timeout,
+        which a STATUS_TIMEOUT suggests, would not help."""
+        tool = linkchecker_content["tool"]
+        session = FakeSession({
+            "https://foo.com/bar": requests.exceptions.ConnectTimeout("syn")
+        })
+        assert (
+            tool._fetch_status(
+                "https://foo.com/bar", timeout=1, headers={}, session=session
+            )
+            == STATUS_CONNECTION_ERROR
+        )
+        session = FakeSession({
+            "https://foo.com/bar": requests.exceptions.ReadTimeout("slow")
+        })
+        assert (
+            tool._fetch_status(
+                "https://foo.com/bar", timeout=1, headers={}, session=session
+            )
+            == STATUS_TIMEOUT
+        )

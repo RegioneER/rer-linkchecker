@@ -5,10 +5,12 @@ A Plone addon that checks every internal and external link found in site content
 ## Features
 
 - Adds a `portal_linkchecker` tool that crawls the whole site, collecting every link found in content fields and in Volto blocks (`resolveuid/...` links included).
-- Checks internal links by resolving them against the catalog, and external links concurrently over HTTP (configurable timeout, thread pool size, and per-host throttling).
+- Checks internal links by resolving them against the catalog, and external links concurrently over HTTP (configurable connect and read timeouts, thread pool size, and per-host throttling).
+- Gives up on a host after a few consecutive connection errors: its remaining links get the same outcome without being fetched, so a dead host does not hold the run up for minutes.
+- Reports the links to a blacklisted domain (one contents must never link to, e.g. the editorial backend of the sites) without fetching them: see [Blacklisted domains](#blacklisted-domains).
 - Caches external link statuses for a configurable TTL, so repeated runs only re-check links that are due.
 - Distinguishes real broken links from bot-protection responses (`403`, `429`, LinkedIn's `999`: the link usually works for a human, so it is not counted as broken) and from `http://` links that only work over `https://` (reported apart, so the url can be updated in place).
-- Reports the conditions that are not a plain http status with their own negative status, so they can be told apart in the CSV: `-1` timeout, `-2` works only over `https` (update the link), `-3` connection error.
+- Reports the conditions that are not a plain http status with their own negative status, so they can be told apart in the CSV: `-1` timeout, `-2` works only over `https` (update the link), `-3` connection error, `-4` blacklisted domain.
 - Does not verify TLS certificates: only reachability matters here, and many otherwise working servers omit their intermediate certificate (browsers fetch it themselves, `requests` does not), which would be reported as a broken link.
 - Exposes the results as a CSV report via `tool.get_rows()`, with the same columns and labels as the report panel: site content, link to check, link type, outcome (the status code), outcome description and the action to take (to fix, to update, to check), translated in the language of the request.
 - Ships a `check_broken_links` console script to run a check from the command line or from cron, without going through the web.
@@ -54,11 +56,34 @@ rendering. Both include the bot-protected links (each with its own description),
 `get_page_with_broken_links()` leaves them out: it answers "how many real problems are there".
 Filter either with `tool.filter_links(items, status=[404], link_type="EXTERNAL")`.
 
-`check_site(ttl=3600 * 6, timeout=15, max_workers=10)` accepts:
+`check_site(ttl=3600 * 6, timeout=15, max_workers=10, connect_timeout=5, host_max_failures=3)` accepts:
 
 - `ttl`: seconds a cached external link status stays valid (`0` forces a full recheck).
-- `timeout`: per-request timeout, in seconds, for external links.
+- `timeout`: per-request timeout, in seconds, for an external link to answer once connected.
 - `max_workers`: number of concurrent threads checking external links.
+- `connect_timeout`: seconds allowed to open the connection, never more than `timeout`. A host that does not accept the connection in time is a connection error (`-3`), not a timeout: raising the timeout would not bring it back.
+- `host_max_failures`: consecutive connection errors after which a host is given up on for the run (`0` never gives up). Any other outcome, an http error or a timeout included, proves the host accepts connections and resets the count: a timeout is about a slow page, and the next page of the same host may well answer. The links left unchecked get the outcome of the failure that tripped it and are not cached, so the next run tries them again; the log lists each host given up on, with the number of links it left unchecked.
+
+#### Blacklisted domains
+
+Set `RER_LINKCHECKER_BLACKLIST_DOMAINS` in the environment of the instance (and of the cron
+running the script) to a comma separated list of domains contents must never link to:
+
+```shell
+RER_LINKCHECKER_BLACKLIST_DOMAINS="applicazioni.regione.emilia-romagna.it,*-iam.regione.emilia-romagna.it"
+```
+
+A domain covers its subdomains too (`x.applicazioni.regione.emilia-romagna.it`), but not a host
+that merely ends with the same letters (`notapplicazioni.regione.emilia-romagna.it`). A domain
+with a `*` is a pattern matched over the whole host, `*` standing for any characters, dots
+included: `*-iam.regione.emilia-romagna.it` covers the editorial domain of every site
+(`ambiente-iam.…`, `salute-iam.…`), but not `iam.regione.emilia-romagna.it`. Case and port do
+not matter.
+
+Their links are reported as `-4`, to fix, without any request, and are not cached: the variable
+is read at every check, so changing it takes effect at the next run. The blacklist wins over
+the internal links too: when a check runs on a blacklisted domain (e.g. from the editorial
+domain of the site), the absolute links to it are reported all the same.
 
 ### The `check_broken_links` console script
 
@@ -74,7 +99,7 @@ Installed as a standard `console_scripts` entry point (`[project.scripts]` in `p
 
 Options:
 
-- `--ttl`, `--workers`, `--timeout`: same meaning as on `check_site()`.
+- `--ttl`, `--workers`, `--timeout`, `--connect-timeout`, `--host-max-failures`: same meaning as the `check_site()` arguments `ttl`, `max_workers`, `timeout`, `connect_timeout`, `host_max_failures`.
 - `--output-dir`: also dump the run as a csv in this directory (default: no csv).
 - `--site-id`: id of the Plone site to check (default: the `PLONE_SITE_ID` env var, or `Plone`).
 - `--url <url>`: verify a single url and log its status, without touching the site.
@@ -108,7 +133,7 @@ curl -u user:pass -OJ "$SITE/++api++/@linkchecker-csv"
 Both accept the same filters:
 
 - `status`: repeatable, e.g. `?status=404&status=-2` (negative values are the `STATUS_*`
-  constants: `-1` timeout, `-2` https-only, `-3` connection error).
+  constants: `-1` timeout, `-2` https-only, `-3` connection error, `-4` blacklisted domain).
 - `type`: `INTERNAL` or `EXTERNAL`.
 
 An invalid filter value answers `400` rather than silently returning an empty report.
@@ -138,7 +163,7 @@ can treat it as any other content reference, and names the link's own fields apa
 ```
 
 `action` is what an editor has to do about the link: `fix` for `404` and `410` (the resource
-is gone), `update` for `-2` (the url only needs `https`), `check` for any other outcome.
+is gone) and `-4` (the domain must not be linked), `update` for `-2` (the url only needs `https`), `check` for any other outcome.
 
 `@linkchecker-csv` returns the exact same csv the console script writes (same columns, same
 quoting), names the file after the date of the *data* rather than of the download, and repeats
