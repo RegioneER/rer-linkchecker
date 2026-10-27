@@ -9,6 +9,18 @@
 
 <!-- towncrier release notes start -->
 
+## 1.1.0 (2026-10-27)
+
+
+### New features:
+
+- Accept patterns in `RER_LINKCHECKER_BLACKLIST_DOMAINS`: `*-iam.regione.emilia-romagna.it` blacklists the editorial domain of every site at once. The blacklist now also wins over the domain the check runs on, so absolute links to a blacklisted editorial domain are reported even when the check runs from it. 
+
+
+### Bug fixes:
+
+- Give up on a host after consecutive connection errors only, no longer after timeouts: a timeout means the server accepted the connection and that page was slow, which tells nothing about the next one. On ambiente, `applicazioni.regione.emilia-romagna.it` was given up on after three slow pages in a row, and 28 of its working links were reported as timeouts. 
+
 ## 1.1.0a0 (2026-10-26)
 
 

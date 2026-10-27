@@ -1,1 +1,0 @@
-Give up on a host after consecutive connection errors only, no longer after timeouts: a timeout means the server accepted the connection and that page was slow, which tells nothing about the next one. On ambiente, `applicazioni.regione.emilia-romagna.it` was given up on after three slow pages in a row, and 28 of its working links were reported as timeouts.

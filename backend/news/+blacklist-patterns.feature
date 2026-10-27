@@ -1,1 +1,0 @@
-Accept patterns in `RER_LINKCHECKER_BLACKLIST_DOMAINS`: `*-iam.regione.emilia-romagna.it` blacklists the editorial domain of every site at once. The blacklist now also wins over the domain the check runs on, so absolute links to a blacklisted editorial domain are reported even when the check runs from it.
